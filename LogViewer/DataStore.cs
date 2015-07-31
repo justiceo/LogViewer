@@ -22,9 +22,11 @@ namespace LogViewer
 		private static string _previousSortColumn = "";
 		private static bool _isAscending = true;
 		private static int _defaultStartRowIndex = 0; // can be updated by section
+		private static string _currentFileName;
 
 		public static bool HasMultipleObjects = false;
 		public static bool IsHydrated = false;
+		public static bool IsReadingFile = false;
 		public static int UserDefinedPageSize = 100;
 
 		public static int TotalRecordCount
@@ -43,26 +45,50 @@ namespace LogViewer
 
 			// Create an instance of the open file dialog box.
 			OpenFileDialog openFileDialog = new OpenFileDialog();
+			JObjectsEnumerable = new List<JObject>();
 
 			// Call the ShowDialog method to show the dialog box. Process input if the user clicked OK.
-			if (openFileDialog.ShowDialog() == false)
-			{
-				JObjectsEnumerable = new List<JObject>();
-				return;
-				
-			}
-			if (string.IsNullOrWhiteSpace(openFileDialog.FileName))
-			{
-				JObjectsEnumerable = new List<JObject>();
-				return;
-			}
+			if (openFileDialog.ShowDialog() == false) return;
+			if (string.IsNullOrWhiteSpace(openFileDialog.FileName)) return;
+			_currentFileName = openFileDialog.FileName;
 
-			string[] fileAsStringArray = File.ReadAllLines(openFileDialog.FileName);
-			JObjectsEnumerable = fileAsStringArray.Select(JsonConvert.DeserializeObject<JObject>).ToList();
+
+			IsReadingFile = true;
+			// read just enough to paint the screen
+			StreamReader streamReader = File.OpenText(openFileDialog.FileName);
+			string line = String.Empty;
+			int i = 0;
+			while ((line = streamReader.ReadLine()) != null && i < _maximumRows*2 )
+			{
+				JObjectsEnumerable.Add(JsonConvert.DeserializeObject<JObject>(line));
+				i++;
+			}
+			//streamReader.Close();
 
 			_totalRecordCount = JObjectsEnumerable.Count();
-
 			IsHydrated = true;
+
+			// spin off a thread to read rest of file
+			Task readRestofFile = Task.Factory.StartNew(() => ReadRestofFileT());
+			//readRestofFile.Start();
+			//readRestofFile.Wait();
+		}
+
+		public static void ReadRestofFileT()
+		{
+			StreamReader streamReader = File.OpenText(_currentFileName);
+			string line = String.Empty;
+			int i = 0;
+			// lets make up for first read rows
+			while (streamReader.ReadLine() != null && i < _maximumRows*2 -1) i++; // because we read the line even on the 199th iteration
+			while ((line = streamReader.ReadLine()) != null)
+			{
+				JObjectsEnumerable.Add(JsonConvert.DeserializeObject<JObject>(line));
+			
+			}
+			streamReader.Close();
+			IsReadingFile = false;
+			_totalRecordCount = JObjectsEnumerable.Count();
 		}
 		
 		public static IJEnumerable<JObject> ApplySort(string sortColumn)
@@ -135,6 +161,8 @@ namespace LogViewer
 
 		public static string PageNavigationString()
 		{
+			if(IsReadingFile)
+				return (_startRowIndex + 1) + " to " + (_startRowIndex + _maximumRows) + " of ....";
 			return (_startRowIndex + 1) + " to " + (_startRowIndex + _maximumRows) + " of " + _totalRecordCount;
 		}
 

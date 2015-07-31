@@ -7,7 +7,7 @@
 	<Grid>
 		<Menu Height="27" Name="menu1" VerticalAlignment="Top" Background="White" >
 			<MenuItem Header="_File " Height="27" Width="56" Padding="19,5,8,3" >
-				<MenuItem Header="_Open Log File" Click="OpenLogFileHandler" />
+				<MenuItem Header="_Open Log File" Command="{Binding OpenFileCommand}" />
 				<MenuItem Header="_Exit" Click="ExitHandler" />
 			</MenuItem>
 			<MenuItem Header="_Edit " Height="27" Width="58" Padding="19,5,8,3" />

@@ -23,21 +23,13 @@ namespace LogViewer
 		
 		private IJEnumerable<JObject> _jObjectCollection; 
 
-		private int _start = 0;
-
-		private const int ItemCount = 50;
-
-		private string _sortColumn = "Id";
-
-		private bool _ascending = true;
-
-		private int _totalItems = 0;
-
 		private ICommand _firstCommand;
 
 		private ICommand _previousCommand;
 
 		private ICommand _nextCommand;
+
+		private ICommand _openFileCommand;
 
 		private ICommand _lastCommand;
 
@@ -46,6 +38,8 @@ namespace LogViewer
 		public MainViewModel()
 		{
 			LoadLogEntries();
+			//Task t = Task.Factory.StartNew(DataStore.ReadRestofFileT);
+			//t.Start();
 		}
 
 		/// <summary>
@@ -179,6 +173,25 @@ namespace LogViewer
 		}
 
 		/// <summary>
+		/// Gets the command for opening a log file
+		/// </summary>
+		public ICommand OpenFileCommand
+		{
+			get
+			{
+				if (_openFileCommand == null)
+				{
+					_openFileCommand = new RelayCommand
+						(
+						LoadLogEntries
+					);
+				}
+
+				return _openFileCommand;
+			}
+		}
+
+		/// <summary>
 		/// The number of items to display in a page
 		/// </summary>
 		public int PageSize {
@@ -214,9 +227,7 @@ namespace LogViewer
 		/// <param name="ascending">Set to true if the sort</param>
 		public void Sort(string sortColumn)
 		{
-			_sortColumn = sortColumn;
-
-			JObjectCollection = DataStore.ApplySort(_sortColumn);
+			JObjectCollection = DataStore.ApplySort(sortColumn);
 			NotifyAll();
 		}
 		

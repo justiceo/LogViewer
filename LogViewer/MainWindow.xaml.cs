@@ -31,27 +31,6 @@ namespace LogViewer
 		}
 
 		/// <summary>
-		/// Opens a log file
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void OpenLogFileHandler(object sender, RoutedEventArgs e)
-		{
-			// Create an instance of the open file dialog box.
-			OpenFileDialog openFileDialog = new OpenFileDialog();
-
-			// Call the ShowDialog method to show the dialog box. Process input if the user clicked OK.
-			if (openFileDialog.ShowDialog() == false) return;
-			if (string.IsNullOrWhiteSpace(openFileDialog.FileName)) return;
-
-			string[] fileAsStringArray = File.ReadAllLines(openFileDialog.FileName);
-			IEnumerable<JObject> jObjectsList = fileAsStringArray.Select(JsonConvert.DeserializeObject<JObject>);
-			
-			LogDataGrid.ItemsSource = jObjectsList.ToList().AsJEnumerable();
-			
-		}
-
-		/// <summary>
 		/// Defers sorting to the Data Access layer and simply updates grid with results
 		/// </summary>
 		/// <param name="sender"></param>
@@ -88,7 +67,7 @@ namespace LogViewer
 		private void PageSizeCombobox_OnLoaded(object sender, RoutedEventArgs e)
 		{
 			// set the default page size
-			PageSizeCombobox.SelectedValue = PageSizeCombobox.Items.GetItemAt(1).ToString();
+			PageSizeCombobox.SelectedValue = PageSizeCombobox.Items.GetItemAt(0).ToString();
 		}
 	}
 }
