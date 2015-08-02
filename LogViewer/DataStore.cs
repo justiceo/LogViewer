@@ -1,7 +1,10 @@
-﻿using System;
+﻿#define DEBUG
+
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,6 +17,7 @@ namespace LogViewer
 {
 	public static class DataStore
 	{
+        #region Private Fields
 
 		private static List<JObject> JObjectsEnumerable;
 		private static int _startRowIndex = 0;
@@ -24,12 +28,19 @@ namespace LogViewer
 		private static int _defaultStartRowIndex = 0; // can be updated by section
 		private static string _currentFileName;
 
+        #endregion
+
 		public static bool HasMultipleObjects = false;
 		public static bool IsHydrated = false;
 		public static bool IsReadingFile = false;
 		public static int UserDefinedPageSize = 50;
 		public static bool IsLargeFile = false;
 
+	    public static int CurrentStartIndex 
+	    {
+	        get {return _startRowIndex; }
+	    }
+        
 		public static int TotalRecordCount
 		{
 			get { return _totalRecordCount; }
@@ -124,14 +135,15 @@ namespace LogViewer
 			_pageSize = UserDefinedPageSize;
 			_startRowIndex = _defaultStartRowIndex;
 
-			return IsLargeFile ? Cache.First().AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
+			return IsLargeFile ? Cache.First(_startRowIndex).AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
 		}
-		public static IJEnumerable<JObject> PreviousPage()
+		
+        public static IJEnumerable<JObject> PreviousPage()
 		{
 			_pageSize = UserDefinedPageSize;
 			_startRowIndex -= _pageSize;
 
-			return IsLargeFile ? Cache.Previous().AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
+			return IsLargeFile ? Cache.Previous(_startRowIndex).AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
 		}
 
 		public static IJEnumerable<JObject> NextPage()
@@ -142,16 +154,15 @@ namespace LogViewer
 			else
 				_pageSize = UserDefinedPageSize;
 			
-			return IsLargeFile ? Cache.Next().AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
+			return IsLargeFile ? Cache.Next(_startRowIndex).AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
 		}
-		
 		
 		public static IJEnumerable<JObject> LastPage()
 		{
 			_startRowIndex = _totalRecordCount - (_totalRecordCount%_pageSize == 0 ? _pageSize : _totalRecordCount%_pageSize);
 			_pageSize = _totalRecordCount - _startRowIndex;
 
-			return IsLargeFile ? Cache.Last().AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
+			return IsLargeFile ? Cache.Last(_startRowIndex).AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
 		}
 		
 		public static bool HasPreviousPage()
@@ -191,6 +202,7 @@ namespace LogViewer
 
 		private static IJEnumerable<JObject> Paginate(int start, int pageSize)
 		{
+            // consider removing pageSize as parameter
 			var paginatedData = new List<JObject>();
 
 			for (int i = 0; i < pageSize; i++)
@@ -211,27 +223,33 @@ namespace LogViewer
 		}
 
 		public static class Cache
-		{
-			private static Dictionary<string, List<JObject>> _cache;
+        {
+            #region Private Fields
+
+            private static Dictionary<string, List<JObject>> _cache;
 			private static string _lastRequestPage;
-			public static Task InitCache = new Task(PopulateCache);
+		    private static int _lastRequestedStart;
 			private static Task refreshTask = new Task(RefreshCache);
 			private static int _fileCurrentPosition = 0;
 			private const string first = "first";
 			private const string previous = "previous";
-			private const string prevprev = "preprev";
 			private const string next = "next";
-			private const string nextnext = "nextnext";
 			private const string last = "last";
 			private static StreamReader streamReader;
+
+            #endregion
+            
+            public static Task InitCache = new Task(PopulateCache);
 			
-			public static List<JObject> First()
+			public static List<JObject> First(int startRowIndex)
 			{
 				InitCache.Wait();
-				_lastRequestPage = first;
 
 				if (refreshTask.Status == TaskStatus.Running)
 					refreshTask.Wait();
+
+                _lastRequestPage = first;
+			    _lastRequestedStart = startRowIndex;
 
 				var requestedPage = _cache[_lastRequestPage];
 				refreshTask = new Task(RefreshCache);
@@ -240,41 +258,53 @@ namespace LogViewer
 				return requestedPage;
 			}
 
-			public static List<JObject> Previous()
+            public static List<JObject> Previous(int startRowIndex)
 			{
-				_lastRequestPage = previous;
-
 				if (refreshTask.Status == TaskStatus.Running)
 					refreshTask.Wait();
 
-				var requestedPage = _cache[_lastRequestPage];
-				refreshTask = new Task(RefreshCache);
-				refreshTask.Start();
-
-				return requestedPage;
-			}
-			public static List<JObject> Next()
-			{
-				_lastRequestPage = next;
-
-				if (refreshTask.Status == TaskStatus.Running)
-					refreshTask.Wait();
+                _lastRequestPage = previous;
+                _lastRequestedStart = startRowIndex;
 
 				var requestedPage = _cache[_lastRequestPage];
+                if (_lastRequestedStart < _pageSize )
+                    requestedPage = _cache[first];
+
+
 				refreshTask = new Task(RefreshCache);
 				refreshTask.Start();
 
 				return requestedPage;
 			}
 
-			public static List<JObject> Last()
+            public static List<JObject> Next(int startRowIndex)
 			{
-				_lastRequestPage = last;
-
 				if (refreshTask.Status == TaskStatus.Running)
 					refreshTask.Wait();
 
+                _lastRequestPage = next;
+                _lastRequestedStart = startRowIndex;
+
+                var requestedPage = _cache[_lastRequestPage];
+
+                if(_lastRequestedStart + _pageSize >= _totalRecordCount)
+				    requestedPage = _cache[last];
+
+				refreshTask = new Task(RefreshCache);
+				refreshTask.Start();
+
+				return requestedPage;
+			}
+
+            public static List<JObject> Last(int startRowIndex)
+			{
+				if (refreshTask.Status == TaskStatus.Running)
+					refreshTask.Wait();
+
+                _lastRequestPage = last;
+                _lastRequestedStart = startRowIndex;
 				var requestedPage = _cache[_lastRequestPage];
+
 				refreshTask = new Task(RefreshCache);
 				refreshTask.Start();
 
@@ -285,15 +315,13 @@ namespace LogViewer
 			{
 				_cache = new Dictionary<string, List<JObject>>();
 				// load first and last pages into cache
-				_cache[first] = ReadAtIndex(_defaultStartRowIndex);
+				_cache[first] = ReadAtIndex(_defaultStartRowIndex, _pageSize);
 				var lastPageStart = _totalRecordCount - (_totalRecordCount % _pageSize == 0 ? _pageSize : _totalRecordCount % _pageSize);
-				_cache[last] = ReadAtIndex(lastPageStart);
+				_cache[last] = ReadAtIndex(lastPageStart, _totalRecordCount - lastPageStart);
 				
 				// instantiate the rest
 				_cache[next] = new List<JObject>();
-				_cache[nextnext] = new List<JObject>();
 				_cache[previous] = new List<JObject>();
-				_cache[prevprev] = new List<JObject>();
 			}
 
 			/// <summary>
@@ -306,32 +334,18 @@ namespace LogViewer
 				switch (_lastRequestPage)
 				{
 					case first :
-						_cache[previous] = _cache[first];
-						_cache[prevprev] = _cache[first];
-						_fileCurrentPosition = _defaultStartRowIndex;
-						_cache[next] = ReadAtIndex(_defaultStartRowIndex + _pageSize);
-						_cache[nextnext] = ReadAtIndex(_defaultStartRowIndex + _pageSize * 2);
+						_cache[next] = ReadAtIndex(_lastRequestedStart + _pageSize, _pageSize);
 						break;
 					case previous:
-						_cache[nextnext] = _cache[next];
 						_cache[next] = _cache[previous];
-						_cache[previous] = _cache[prevprev];
-						_cache[prevprev] = ReadAtIndex(_fileCurrentPosition - _pageSize);
+                        _cache[previous] = ReadAtIndex(_lastRequestedStart - _pageSize, _pageSize);
 						break;
 					case next:
-						_cache[prevprev] = _cache[previous];
 						_cache[previous] = _cache[next];
-						_cache[next] = _cache[nextnext];
-						_cache[nextnext] = ReadAtIndex(_fileCurrentPosition);
+                        _cache[next] = ReadAtIndex(_lastRequestedStart + _pageSize, _pageSize);
 						break;
 					case last:
-						_cache[next] = _cache[last];
-						_cache[nextnext] = _cache[last];
-						var lastPageStart = _totalRecordCount - (_totalRecordCount % _pageSize == 0 
-							? _pageSize : 
-							_totalRecordCount % _pageSize);
-						_cache[prevprev] = ReadAtIndex(lastPageStart - _pageSize*2);
-						_cache[previous] = ReadAtIndex(lastPageStart - _pageSize);
+                        _cache[previous] = ReadAtIndex(_lastRequestedStart - UserDefinedPageSize, UserDefinedPageSize);
 						break;
 				}
 			}
@@ -362,38 +376,53 @@ namespace LogViewer
 			/// Useful for reading last pages, previous pages or reading from weird points in file
 			/// </summary>
 			/// <returns></returns>
-			private static List<JObject> ReadAtIndex(int startIndex)
+			private static List<JObject> ReadAtIndex(int startIndex, int pageSize)
 			{
-				// what if start is less than 0
 				List<JObject> jObjectsList = new List<JObject>();
 
 				if (streamReader == null || streamReader.EndOfStream)
 					streamReader = File.OpenText(_currentFileName);
 
+                // if we're requesting the first or last page, return them from cache
+			    if (startIndex < pageSize && _cache.ContainsKey(first)) 
+                    return _cache[first];
+			    if (startIndex + pageSize >= _totalRecordCount && _cache.ContainsKey(last)) 
+                    return _cache[last];
+
 				// set start position for read
-				if (_fileCurrentPosition > startIndex) _fileCurrentPosition = 0;
-				while (_fileCurrentPosition < startIndex && streamReader.ReadLine() != null ) _fileCurrentPosition++;
+			    if (_fileCurrentPosition > startIndex)
+			    {
+                    #if DEBUG
+                        Console.WriteLine("_fileCurrentPosition is " + _fileCurrentPosition + ", which is greater than startIndex: " + startIndex);
+                    #endif
+                    
+                    // restart stream
+                    streamReader.Close();
+			        streamReader = File.OpenText(_currentFileName);
+			        _fileCurrentPosition = 0;
+			    }
+			    while (_fileCurrentPosition < startIndex && streamReader.ReadLine() != null)
+                {
+			        _fileCurrentPosition++;
+			    }
 
+                #if DEBUG
+                    Console.WriteLine("fileCurrentPosition is finally set to: " + _fileCurrentPosition);
+                #endif
 
+                // perform the read and convert
 				string line;
-				while ((_fileCurrentPosition < startIndex + _pageSize) && (line = streamReader.ReadLine()) != null)
+				while ((_fileCurrentPosition < startIndex + pageSize) && (line = streamReader.ReadLine()) != null)
 				{
 					jObjectsList.Add(JsonConvert.DeserializeObject<JObject>(line));
 					_fileCurrentPosition++;
 				}
-				
+
+                #if DEBUG
+                    Console.WriteLine("after read, fileCurrentPosition is: " + _fileCurrentPosition);
+                #endif
 				return jObjectsList;
 			}
-
-			/// <summary>
-			/// Reload all contents in cache from first to last
-			/// </summary>
-			public static void UpdateAll()
-			{
-				
-			}
-  
-			
 		}
 	}
 }

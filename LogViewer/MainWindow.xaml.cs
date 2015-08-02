@@ -69,6 +69,11 @@ namespace LogViewer
 			// set the default page size
 			PageSizeCombobox.SelectedValue = PageSizeCombobox.Items.GetItemAt(0).ToString();
 		}
+
+	    private void LogDataGrid_OnLoadingRow(object sender, DataGridRowEventArgs e)
+	    {
+	        e.Row.Header = (DataStore.CurrentStartIndex + e.Row.GetIndex() + 1).ToString();
+	    }
 	}
 }
 
