@@ -17,7 +17,7 @@ namespace LogViewer
 
 		private static List<JObject> JObjectsEnumerable;
 		private static int _startRowIndex = 0;
-		private static int _maximumRows = 100;
+		private static int _pageSize = 100;
 		private static int _totalRecordCount = 0;
 		private static string _previousSortColumn = "";
 		private static bool _isAscending = true;
@@ -27,7 +27,8 @@ namespace LogViewer
 		public static bool HasMultipleObjects = false;
 		public static bool IsHydrated = false;
 		public static bool IsReadingFile = false;
-		public static int UserDefinedPageSize = 100;
+		public static int UserDefinedPageSize = 50;
+		public static bool IsLargeFile = false;
 
 		public static int TotalRecordCount
 		{
@@ -35,14 +36,8 @@ namespace LogViewer
 			set { _totalRecordCount = value; }
 		}
 
-		public static void LoadCollection()
+		public static void LoadFile()
 		{
-			//if (JObjectsEnumerable != null)
-			//{
-			//	IsHydrated = true;
-			//	return;
-			//}
-
 			// Create an instance of the open file dialog box.
 			OpenFileDialog openFileDialog = new OpenFileDialog();
 			JObjectsEnumerable = new List<JObject>();
@@ -52,35 +47,43 @@ namespace LogViewer
 			if (string.IsNullOrWhiteSpace(openFileDialog.FileName)) return;
 			_currentFileName = openFileDialog.FileName;
 
-
-			IsReadingFile = true;
 			// read just enough to paint the screen
 			StreamReader streamReader = File.OpenText(openFileDialog.FileName);
+			IsReadingFile = true;
 			string line = String.Empty;
-			int i = 0;
-			while ((line = streamReader.ReadLine()) != null && i < _maximumRows*2 )
+			_totalRecordCount = 0;
+			while ( _totalRecordCount < _pageSize*2  && (line = streamReader.ReadLine()) != null )
 			{
 				JObjectsEnumerable.Add(JsonConvert.DeserializeObject<JObject>(line));
-				i++;
+				_totalRecordCount++;
 			}
-			//streamReader.Close();
 
-			_totalRecordCount = JObjectsEnumerable.Count();
+			// get rest of count
+			while (streamReader.ReadLine() != null) _totalRecordCount++;
+			
+			IsLargeFile = (_totalRecordCount > 1000);
 			IsHydrated = true;
 
 			// spin off a thread to read rest of file
-			Task readRestofFile = Task.Factory.StartNew(() => ReadRestofFileT());
-			//readRestofFile.Start();
-			//readRestofFile.Wait();
+			if (IsLargeFile)
+			{
+				//Cache.InitCache.Start();
+				Cache.InitCache.Start();
+				IsReadingFile = false;
+			}
+			else
+			{
+				Task readRestofFile = Task.Factory.StartNew(ReadRestofFileT);
+			}
 		}
 
-		public static void ReadRestofFileT()
+		private static void ReadRestofFileT()
 		{
 			StreamReader streamReader = File.OpenText(_currentFileName);
 			string line = String.Empty;
 			int i = 0;
 			// lets make up for first read rows
-			while (streamReader.ReadLine() != null && i < _maximumRows*2 -1) i++; // because we read the line even on the 199th iteration
+			while (i < _pageSize*2 && streamReader.ReadLine() != null) i++; // because we read the line even on the 199th iteration
 			while ((line = streamReader.ReadLine()) != null)
 			{
 				JObjectsEnumerable.Add(JsonConvert.DeserializeObject<JObject>(line));
@@ -88,7 +91,6 @@ namespace LogViewer
 			}
 			streamReader.Close();
 			IsReadingFile = false;
-			_totalRecordCount = JObjectsEnumerable.Count();
 		}
 		
 		public static IJEnumerable<JObject> ApplySort(string sortColumn)
@@ -117,53 +119,61 @@ namespace LogViewer
 			return FirstPage();
 		}
 		
-		public static IJEnumerable<JObject> NextPage()
-		{
-			_startRowIndex += _maximumRows;
-			if (_startRowIndex + _maximumRows > _totalRecordCount)
-				_maximumRows = _totalRecordCount - _startRowIndex;
-			else
-				_maximumRows = UserDefinedPageSize;
-
-			return Paginate(_startRowIndex, _maximumRows);
-		}
-		
-		public static IJEnumerable<JObject> PreviousPage()
-		{
-			_maximumRows = UserDefinedPageSize;
-			_startRowIndex -= _maximumRows;
-			return Paginate(_startRowIndex, _maximumRows);
-		}
-
 		public static IJEnumerable<JObject> FirstPage()
 		{
-			_maximumRows = UserDefinedPageSize;
+			_pageSize = UserDefinedPageSize;
 			_startRowIndex = _defaultStartRowIndex;
-			return Paginate(_startRowIndex, _maximumRows);
+
+			return IsLargeFile ? Cache.First().AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
 		}
+		public static IJEnumerable<JObject> PreviousPage()
+		{
+			_pageSize = UserDefinedPageSize;
+			_startRowIndex -= _pageSize;
+
+			return IsLargeFile ? Cache.Previous().AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
+		}
+
+		public static IJEnumerable<JObject> NextPage()
+		{
+			_startRowIndex += _pageSize;
+			if (_startRowIndex + _pageSize > _totalRecordCount)
+				_pageSize = _totalRecordCount - _startRowIndex;
+			else
+				_pageSize = UserDefinedPageSize;
+			
+			return IsLargeFile ? Cache.Next().AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
+		}
+		
 		
 		public static IJEnumerable<JObject> LastPage()
 		{
-			_startRowIndex = _totalRecordCount - (_totalRecordCount%_maximumRows == 0 ? _maximumRows : _totalRecordCount%_maximumRows);
-			_maximumRows = _totalRecordCount - _startRowIndex;
-			return Paginate(_startRowIndex, _maximumRows);
+			_startRowIndex = _totalRecordCount - (_totalRecordCount%_pageSize == 0 ? _pageSize : _totalRecordCount%_pageSize);
+			_pageSize = _totalRecordCount - _startRowIndex;
+
+			return IsLargeFile ? Cache.Last().AsJEnumerable() : Paginate(_startRowIndex, _pageSize);
 		}
 		
 		public static bool HasPreviousPage()
 		{
-			return _startRowIndex + 1 > _maximumRows; 
+			return _startRowIndex + 1 > _pageSize; 
 		}
 
 		public static bool HasNextPage()
 		{
-			return _totalRecordCount > _startRowIndex + _maximumRows; 
+			return _totalRecordCount > _startRowIndex + _pageSize; 
+		}
+
+		public static bool HasLastPage()
+		{
+			if (IsReadingFile)
+				return false;
+			return _totalRecordCount > _startRowIndex + _pageSize;
 		}
 
 		public static string PageNavigationString()
 		{
-			if(IsReadingFile)
-				return (_startRowIndex + 1) + " to " + (_startRowIndex + _maximumRows) + " of ....";
-			return (_startRowIndex + 1) + " to " + (_startRowIndex + _maximumRows) + " of " + _totalRecordCount;
+			return (_startRowIndex + 1) + " to " + (_startRowIndex + _pageSize) + " of " + _totalRecordCount;
 		}
 
 		private static IEnumerable<JObject> CleanSort(string sortColumn, bool isAscending)
@@ -190,14 +200,200 @@ namespace LogViewer
 			return paginatedData.AsJEnumerable();
 		}
 
-		public static IJEnumerable<JObject> RefreshPage()
+		public static IJEnumerable<JObject> ResizeCurrentPage()
 		{
-			_maximumRows = UserDefinedPageSize;
+			_pageSize = UserDefinedPageSize;
 			// check if we're close to last page
-			if (_startRowIndex + _maximumRows >= _totalRecordCount)
+			if (_startRowIndex + _pageSize >= _totalRecordCount)
 				return LastPage();
 
-			return Paginate(_startRowIndex, _maximumRows);
+			return Paginate(_startRowIndex, _pageSize);
+		}
+
+		public static class Cache
+		{
+			private static Dictionary<string, List<JObject>> _cache;
+			private static string _lastRequestPage;
+			public static Task InitCache = new Task(PopulateCache);
+			private static Task refreshTask = new Task(RefreshCache);
+			private static int _fileCurrentPosition = 0;
+			private const string first = "first";
+			private const string previous = "previous";
+			private const string prevprev = "preprev";
+			private const string next = "next";
+			private const string nextnext = "nextnext";
+			private const string last = "last";
+			private static StreamReader streamReader;
+			
+			public static List<JObject> First()
+			{
+				InitCache.Wait();
+				_lastRequestPage = first;
+
+				if (refreshTask.Status == TaskStatus.Running)
+					refreshTask.Wait();
+
+				var requestedPage = _cache[_lastRequestPage];
+				refreshTask = new Task(RefreshCache);
+				refreshTask.Start();
+
+				return requestedPage;
+			}
+
+			public static List<JObject> Previous()
+			{
+				_lastRequestPage = previous;
+
+				if (refreshTask.Status == TaskStatus.Running)
+					refreshTask.Wait();
+
+				var requestedPage = _cache[_lastRequestPage];
+				refreshTask = new Task(RefreshCache);
+				refreshTask.Start();
+
+				return requestedPage;
+			}
+			public static List<JObject> Next()
+			{
+				_lastRequestPage = next;
+
+				if (refreshTask.Status == TaskStatus.Running)
+					refreshTask.Wait();
+
+				var requestedPage = _cache[_lastRequestPage];
+				refreshTask = new Task(RefreshCache);
+				refreshTask.Start();
+
+				return requestedPage;
+			}
+
+			public static List<JObject> Last()
+			{
+				_lastRequestPage = last;
+
+				if (refreshTask.Status == TaskStatus.Running)
+					refreshTask.Wait();
+
+				var requestedPage = _cache[_lastRequestPage];
+				refreshTask = new Task(RefreshCache);
+				refreshTask.Start();
+
+				return requestedPage;
+			}
+
+			public static void PopulateCache()
+			{
+				_cache = new Dictionary<string, List<JObject>>();
+				// load first and last pages into cache
+				_cache[first] = ReadAtIndex(_defaultStartRowIndex);
+				var lastPageStart = _totalRecordCount - (_totalRecordCount % _pageSize == 0 ? _pageSize : _totalRecordCount % _pageSize);
+				_cache[last] = ReadAtIndex(lastPageStart);
+				
+				// instantiate the rest
+				_cache[next] = new List<JObject>();
+				_cache[nextnext] = new List<JObject>();
+				_cache[previous] = new List<JObject>();
+				_cache[prevprev] = new List<JObject>();
+			}
+
+			/// <summary>
+			/// Refreshes the cache as user navigates the pages
+			/// </summary>
+			private static void RefreshCache()
+			{
+				InitCache.Wait();
+
+				switch (_lastRequestPage)
+				{
+					case first :
+						_cache[previous] = _cache[first];
+						_cache[prevprev] = _cache[first];
+						_fileCurrentPosition = _defaultStartRowIndex;
+						_cache[next] = ReadAtIndex(_defaultStartRowIndex + _pageSize);
+						_cache[nextnext] = ReadAtIndex(_defaultStartRowIndex + _pageSize * 2);
+						break;
+					case previous:
+						_cache[nextnext] = _cache[next];
+						_cache[next] = _cache[previous];
+						_cache[previous] = _cache[prevprev];
+						_cache[prevprev] = ReadAtIndex(_fileCurrentPosition - _pageSize);
+						break;
+					case next:
+						_cache[prevprev] = _cache[previous];
+						_cache[previous] = _cache[next];
+						_cache[next] = _cache[nextnext];
+						_cache[nextnext] = ReadAtIndex(_fileCurrentPosition);
+						break;
+					case last:
+						_cache[next] = _cache[last];
+						_cache[nextnext] = _cache[last];
+						var lastPageStart = _totalRecordCount - (_totalRecordCount % _pageSize == 0 
+							? _pageSize : 
+							_totalRecordCount % _pageSize);
+						_cache[prevprev] = ReadAtIndex(lastPageStart - _pageSize*2);
+						_cache[previous] = ReadAtIndex(lastPageStart - _pageSize);
+						break;
+				}
+			}
+
+			/// <summary>
+			/// Returns the next maxCachableRows from a file
+			/// </summary>
+			/// <returns></returns>
+			private static List<JObject> ContinueRead()
+			{
+				List<JObject> jObjectsList = new List<JObject>();
+				if (streamReader == null)
+					streamReader = File.OpenText(_currentFileName);
+				string line;
+				int counter = 0;
+				
+				while ((line = streamReader.ReadLine()) != null && counter < _pageSize)
+				{
+					jObjectsList.Add(JsonConvert.DeserializeObject<JObject>(line));
+					counter++;
+				}
+				_fileCurrentPosition += counter;
+				return jObjectsList;
+			}
+
+			/// <summary>
+			/// Returns the next maxCachableRows from a file, starting at specified index
+			/// Useful for reading last pages, previous pages or reading from weird points in file
+			/// </summary>
+			/// <returns></returns>
+			private static List<JObject> ReadAtIndex(int startIndex)
+			{
+				// what if start is less than 0
+				List<JObject> jObjectsList = new List<JObject>();
+
+				if (streamReader == null || streamReader.EndOfStream)
+					streamReader = File.OpenText(_currentFileName);
+
+				// set start position for read
+				if (_fileCurrentPosition > startIndex) _fileCurrentPosition = 0;
+				while (_fileCurrentPosition < startIndex && streamReader.ReadLine() != null ) _fileCurrentPosition++;
+
+
+				string line;
+				while ((_fileCurrentPosition < startIndex + _pageSize) && (line = streamReader.ReadLine()) != null)
+				{
+					jObjectsList.Add(JsonConvert.DeserializeObject<JObject>(line));
+					_fileCurrentPosition++;
+				}
+				
+				return jObjectsList;
+			}
+
+			/// <summary>
+			/// Reload all contents in cache from first to last
+			/// </summary>
+			public static void UpdateAll()
+			{
+				
+			}
+  
+			
 		}
 	}
 }

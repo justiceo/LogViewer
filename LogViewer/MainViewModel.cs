@@ -37,9 +37,7 @@ namespace LogViewer
 
 		public MainViewModel()
 		{
-			LoadLogEntries();
-			//Task t = Task.Factory.StartNew(DataStore.ReadRestofFileT);
-			//t.Start();
+			InitDataStore();
 		}
 
 		/// <summary>
@@ -164,7 +162,7 @@ namespace LogViewer
 							JObjectCollection = DataStore.LastPage();
 							NotifyAll();
 						},
-						DataStore.HasNextPage
+						DataStore.HasLastPage
 					);
 				}
 
@@ -183,7 +181,7 @@ namespace LogViewer
 				{
 					_openFileCommand = new RelayCommand
 						(
-						LoadLogEntries
+						InitDataStore
 					);
 				}
 
@@ -199,7 +197,7 @@ namespace LogViewer
 			set
 			{
 				DataStore.UserDefinedPageSize = value;
-				JObjectCollection = DataStore.RefreshPage();
+				JObjectCollection = DataStore.ResizeCurrentPage();
 				NotifyAll();
 			}
 		}
@@ -234,9 +232,9 @@ namespace LogViewer
 		/// <summary>
 		/// Refreshes the list of log entries. Called by navigation commands.
 		/// </summary>
-		private void LoadLogEntries()
+		private void InitDataStore()
 		{
-			DataStore.LoadCollection();
+			DataStore.LoadFile();
 			JObjectCollection = DataStore.FirstPage();
 			NotifyAll();
 		}
