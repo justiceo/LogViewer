@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using GalaSoft.MvvmLight.CommandWpf;
 using Newtonsoft.Json.Linq;
@@ -20,8 +16,8 @@ namespace LogViewer
 		#endregion
 
 		#region Private Fields
-		
-		private IJEnumerable<JObject> _jObjectCollection; 
+
+		private IJEnumerable<JObject> _jObjectCollection;
 
 		private ICommand _firstCommand;
 
@@ -45,10 +41,7 @@ namespace LogViewer
 		/// </summary>
 		public IJEnumerable<JObject> JObjectCollection
 		{
-			get
-			{
-				return _jObjectCollection;
-			}
+			get { return _jObjectCollection; }
 			private set
 			{
 				if (ReferenceEquals(_jObjectCollection, value) != true)
@@ -58,7 +51,7 @@ namespace LogViewer
 				}
 			}
 		}
-		
+
 		/// <summary>
 		/// Gets the information for text block in the navigation control
 		/// </summary>
@@ -66,9 +59,9 @@ namespace LogViewer
 		{
 			get
 			{
-				if(DataStore.IsHydrated)
+				if (DataStore.IsHydrated)
 					return DataStore.PageNavigationString();
-				
+
 				return "No Pagination Data";
 			}
 		}
@@ -83,15 +76,14 @@ namespace LogViewer
 				if (_firstCommand == null)
 				{
 					_firstCommand = new RelayCommand
-					(
+						(
 						() =>
 						{
 							JObjectCollection = DataStore.FirstPage();
 							NotifyAll();
 						},
 						DataStore.HasPreviousPage
-					);
-
+						);
 				}
 
 				return _firstCommand;
@@ -108,14 +100,14 @@ namespace LogViewer
 				if (_previousCommand == null)
 				{
 					_previousCommand = new RelayCommand
-					(
+						(
 						() =>
 						{
 							JObjectCollection = DataStore.PreviousPage();
 							NotifyAll();
 						},
 						DataStore.HasPreviousPage
-					);
+						);
 				}
 
 				return _previousCommand;
@@ -132,14 +124,14 @@ namespace LogViewer
 				if (_nextCommand == null)
 				{
 					_nextCommand = new RelayCommand
-					(
+						(
 						() =>
 						{
 							JObjectCollection = DataStore.NextPage();
 							NotifyAll();
 						},
 						DataStore.HasNextPage
-					);
+						);
 				}
 
 				return _nextCommand;
@@ -156,14 +148,14 @@ namespace LogViewer
 				if (_lastCommand == null)
 				{
 					_lastCommand = new RelayCommand
-					(
+						(
 						() =>
 						{
 							JObjectCollection = DataStore.LastPage();
 							NotifyAll();
 						},
 						DataStore.HasLastPage
-					);
+						);
 				}
 
 				return _lastCommand;
@@ -182,7 +174,7 @@ namespace LogViewer
 					_openFileCommand = new RelayCommand
 						(
 						InitDataStore
-					);
+						);
 				}
 
 				return _openFileCommand;
@@ -192,7 +184,8 @@ namespace LogViewer
 		/// <summary>
 		/// The number of items to display in a page
 		/// </summary>
-		public int PageSize {
+		public int PageSize
+		{
 			get { return DataStore.UserDefinedPageSize; }
 			set
 			{
@@ -204,12 +197,11 @@ namespace LogViewer
 
 		public int[] PageSizeOptions
 		{
-
 			get
 			{
 				if (DataStore.IsHydrated)
 				{
-					List<int> possibleOptions = new List<int> { 50, 100, 200, 500, 1000, 5000, 10000 };
+					List<int> possibleOptions = new List<int> {50, 100, 200, 500, 1000, 5000, 10000};
 					possibleOptions = possibleOptions.Where(s => s < DataStore.TotalRecordCount).ToList();
 					return possibleOptions.ToArray();
 				}
@@ -228,7 +220,7 @@ namespace LogViewer
 			JObjectCollection = DataStore.ApplySort(sortColumn);
 			NotifyAll();
 		}
-		
+
 		/// <summary>
 		/// Refreshes the list of log entries. Called by navigation commands.
 		/// </summary>
