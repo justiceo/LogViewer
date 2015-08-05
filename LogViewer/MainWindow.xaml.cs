@@ -49,9 +49,8 @@ namespace LogViewer
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
 		private void LogDataGrid_OnAutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
-		{
-			if (!e.Column.CanUserSort)
-				e.Column.CanUserSort = true;
+		{			
+			e.Column.CanUserSort = !DataStore.IsLargeFile;
 		}
 		
 		/// <summary>
