@@ -29,12 +29,24 @@ namespace LogViewer
 
 		private ICommand _lastCommand;
 
+        private DataStore _dataStore;
+
 		#endregion
 
 		public MainViewModel()
 		{
 			InitDataStore();
 		}
+
+        public bool IsLargeFile()
+        {
+            return _dataStore.IsLargeFile;
+        }
+
+        public int StartRowIndex()
+        {
+            return _dataStore.CurrentStartIndex;
+        }
 
 		/// <summary>
 		/// The list of logEntries in the current page.
@@ -59,8 +71,8 @@ namespace LogViewer
 		{
 			get
 			{
-				if (DataStore.IsHydrated)
-					return DataStore.PageNavigationString();
+				if (_dataStore.IsHydrated)
+					return _dataStore.PageNavigationString();
 
 				return "No Pagination Data";
 			}
@@ -79,10 +91,10 @@ namespace LogViewer
 						(
 						() =>
 						{
-							JObjectCollection = DataStore.FirstPage();
+							JObjectCollection = _dataStore.FirstPage();
 							NotifyAll();
 						},
-						DataStore.HasPreviousPage
+                        () => _dataStore.HasPreviousPage()
 						);
 				}
 
@@ -103,10 +115,10 @@ namespace LogViewer
 						(
 						() =>
 						{
-							JObjectCollection = DataStore.PreviousPage();
+							JObjectCollection = _dataStore.PreviousPage();
 							NotifyAll();
 						},
-						DataStore.HasPreviousPage
+                        () => _dataStore.HasPreviousPage()
 						);
 				}
 
@@ -127,10 +139,10 @@ namespace LogViewer
 						(
 						() =>
 						{
-							JObjectCollection = DataStore.NextPage();
+							JObjectCollection = _dataStore.NextPage();
 							NotifyAll();
 						},
-						DataStore.HasNextPage
+                        () => _dataStore.HasNextPage()
 						);
 				}
 
@@ -151,10 +163,10 @@ namespace LogViewer
 						(
 						() =>
 						{
-							JObjectCollection = DataStore.LastPage();
+							JObjectCollection = _dataStore.LastPage();
 							NotifyAll();
 						},
-						DataStore.HasLastPage
+                        () => _dataStore.HasLastPage()
 						);
 				}
 
@@ -186,11 +198,11 @@ namespace LogViewer
 		/// </summary>
 		public int PageSize
 		{
-			get { return DataStore.UserDefinedPageSize; }
+			get { return _dataStore.UserDefinedPageSize; }
 			set
 			{
-				DataStore.UserDefinedPageSize = value;
-				JObjectCollection = DataStore.ResizeCurrentPage();
+                _dataStore.UserDefinedPageSize = value;
+				JObjectCollection = _dataStore.ResizeCurrentPage();
 				NotifyAll();
 			}
 		}
@@ -199,10 +211,10 @@ namespace LogViewer
 		{
 			get
 			{
-				if (DataStore.IsHydrated)
+				if (_dataStore.IsHydrated)
 				{
 					List<int> possibleOptions = new List<int> {50, 100, 200, 500, 1000, 5000, 10000};
-					possibleOptions = possibleOptions.Where(s => s < DataStore.TotalRecordCount).ToList();
+					possibleOptions = possibleOptions.Where(s => s < _dataStore.TotalRecordCount).ToList();
 					return possibleOptions.ToArray();
 				}
 
@@ -217,7 +229,7 @@ namespace LogViewer
 		/// <param name="ascending">Set to true if the sort</param>
 		public void Sort(string sortColumn)
 		{
-			JObjectCollection = DataStore.ApplySort(sortColumn);
+			JObjectCollection = _dataStore.ApplySort(sortColumn);
 			NotifyAll();
 		}
 
@@ -226,8 +238,9 @@ namespace LogViewer
 		/// </summary>
 		private void InitDataStore()
 		{
-			DataStore.LoadFile();
-			JObjectCollection = DataStore.FirstPage();
+            _dataStore = new DataStore();
+            _dataStore.LoadFile();
+			JObjectCollection = _dataStore.FirstPage();
 			NotifyAll();
 		}
 

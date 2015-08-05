@@ -20,10 +20,7 @@ namespace LogViewer
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		private DataGridColumn _currentSortColumn;
-
-		private ListSortDirection _currentSortDirection;
-
+        
 		public MainWindow()
 		{
 			InitializeComponent();
@@ -49,8 +46,9 @@ namespace LogViewer
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
 		private void LogDataGrid_OnAutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
-		{			
-			e.Column.CanUserSort = !DataStore.IsLargeFile;
+		{
+            MainViewModel mainViewModel = (MainViewModel)DataContext;
+            e.Column.CanUserSort = !mainViewModel.IsLargeFile();
 		}
 		
 		/// <summary>
@@ -71,7 +69,8 @@ namespace LogViewer
 
 	    private void LogDataGrid_OnLoadingRow(object sender, DataGridRowEventArgs e)
 	    {
-	        e.Row.Header = (DataStore.CurrentStartIndex + e.Row.GetIndex() + 1).ToString();
+            MainViewModel mainViewModel = (MainViewModel)DataContext;
+            e.Row.Header = (mainViewModel.StartRowIndex() + e.Row.GetIndex() + 1).ToString();
 	    }
 	}
 }
