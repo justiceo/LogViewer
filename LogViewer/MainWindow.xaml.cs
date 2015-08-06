@@ -72,6 +72,11 @@ namespace LogViewer
             MainViewModel mainViewModel = (MainViewModel)DataContext;
             e.Row.Header = (mainViewModel.StartRowIndex() + e.Row.GetIndex() + 1).ToString();
 	    }
+
+		private void PageSectionCombobox_OnLoaded(object sender, RoutedEventArgs e)
+		{
+			
+		}
 	}
 }
 

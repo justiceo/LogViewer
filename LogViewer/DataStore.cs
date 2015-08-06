@@ -52,9 +52,8 @@ namespace LogViewer
 			TotalRecordCount = 0;
 		}
 
-		// everything below shouldn't happen in the contructor, gosh og
-
 		public void LoadFile() {
+
 			// read just enough to paint the screen
 			StreamReader streamReader = File.OpenText(SourceFileName);
 			IsReadingFile = true;

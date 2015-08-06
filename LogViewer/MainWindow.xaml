@@ -3,11 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525" MinWidth="800" MinHeight="500" WindowState="Maximized">
+        Title="MainWindow" Height="350" Width="525" MinWidth="1200" MinHeight="800" WindowState="Maximized">
 	<Grid>
 		<Menu Height="27" Name="menu1" VerticalAlignment="Top" Background="White" >
 			<MenuItem Header="_File " Height="27" Width="56" Padding="19,5,8,3" >
-				<MenuItem Header="_Open Log File" Command="{Binding OpenFileCommand}" />
+				<MenuItem Header="_Open File" Command="{Binding OpenFileCommand}" />
+				<MenuItem Header="_Open File As Stream" Command="{Binding OpenAsStreamCommand}" />
 				<MenuItem Header="_Exit" Click="ExitHandler" />
 			</MenuItem>
 			<MenuItem Header="_Edit " Height="27" Width="58" Padding="19,5,8,3" />
@@ -26,6 +27,18 @@
 			AlternatingRowBackground="FloralWhite"
 			AutoGeneratingColumn="LogDataGrid_OnAutoGeneratingColumn"
             LoadingRow="LogDataGrid_OnLoadingRow"/>
+
+		<ComboBox 
+			x:Name="PageSectionCombobox"
+			Margin="10,0,0,5"  
+			Width="120"
+			HorizontalAlignment="Left" 
+			VerticalAlignment="Bottom" Height="30"
+			VerticalContentAlignment="Center"
+			ItemsSource="{Binding PageSectionOptions}"
+			SelectedValue="{Binding PageSection}"
+			Loaded="PageSectionCombobox_OnLoaded"
+			/>
 		<StackPanel
             Orientation="Horizontal"
             HorizontalAlignment="Center" 
@@ -58,7 +71,7 @@
 		<ComboBox 
 			Name="PageSizeCombobox"
 			Margin="0,0,10,5"  
-			Width="120"
+			Width="78"
 			HorizontalAlignment="Right" 
 			VerticalAlignment="Bottom" Height="30"
 			VerticalContentAlignment="Center"

@@ -191,6 +191,14 @@ namespace LogViewer
 			}
 		}
 
+		public ICommand OpenAsStreamCommand
+		{
+			get
+			{
+				return new RelayCommand(null);
+			}
+		}
+
 		/// <summary>
 		/// The number of items to display in a page
 		/// </summary>
@@ -209,6 +217,9 @@ namespace LogViewer
 		{
 			get
 			{
+				if(_dataStore.GetTotalRecordCount() == 0)
+					return new[] {0};
+
 				List<int> possibleOptions = new List<int> {50, 100, 200, 500, 1000, 5000, 10000};
 				possibleOptions = possibleOptions.Where(s => s < _dataStore.GetTotalRecordCount()).ToList();
 				return possibleOptions.ToArray();
@@ -235,8 +246,16 @@ namespace LogViewer
 			OpenFileDialog openFileDialog = new OpenFileDialog();
 
 			// Call the ShowDialog method to show the dialog box. Process input if the user clicked OK.
-			if (openFileDialog.ShowDialog() == false) return;
-			if (string.IsNullOrWhiteSpace(openFileDialog.FileName)) return;
+			if (openFileDialog.ShowDialog() == false)
+			{
+				_dataStore = _dataStore ?? new DataStore(null, 0);
+				return;
+			}
+			if (string.IsNullOrWhiteSpace(openFileDialog.FileName))
+			{
+				_dataStore = _dataStore ?? new DataStore(null, 0);
+				return;
+			}
 			// check if file exists
 
             _dataStore = new DataStore(openFileDialog.FileName, 0);
