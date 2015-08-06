@@ -7,6 +7,8 @@ namespace LogViewer
     /// </summary>
     public interface IDataStore
     {
+	    void LoadFile();
+
 	    int GetCurrentStartIndex();
 
 	    int GetTotalRecordCount();
