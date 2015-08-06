@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
 using GalaSoft.MvvmLight.CommandWpf;
+using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 
 namespace LogViewer
@@ -45,7 +46,7 @@ namespace LogViewer
 
         public int StartRowIndex()
         {
-            return _dataStore.CurrentStartIndex;
+            return _dataStore.GetCurrentStartIndex();
         }
 
 		/// <summary>
@@ -71,10 +72,7 @@ namespace LogViewer
 		{
 			get
 			{
-				if (_dataStore.IsHydrated)
-					return _dataStore.PageNavigationString();
-
-				return "No Pagination Data";
+				return _dataStore.GetPageNavigationString();
 			}
 		}
 
@@ -91,10 +89,10 @@ namespace LogViewer
 						(
 						() =>
 						{
-							JObjectCollection = _dataStore.FirstPage();
+							JObjectCollection = _dataStore.GetPage(DataStore.First);
 							NotifyAll();
 						},
-                        () => _dataStore.HasPreviousPage()
+						() => _dataStore.HasPage(DataStore.Previous)
 						);
 				}
 
@@ -115,10 +113,10 @@ namespace LogViewer
 						(
 						() =>
 						{
-							JObjectCollection = _dataStore.PreviousPage();
+							JObjectCollection = _dataStore.GetPage(DataStore.Previous);
 							NotifyAll();
 						},
-                        () => _dataStore.HasPreviousPage()
+						() => _dataStore.HasPage(DataStore.Previous)
 						);
 				}
 
@@ -139,10 +137,10 @@ namespace LogViewer
 						(
 						() =>
 						{
-							JObjectCollection = _dataStore.NextPage();
+							JObjectCollection = _dataStore.GetPage(DataStore.Next);
 							NotifyAll();
 						},
-                        () => _dataStore.HasNextPage()
+						() => _dataStore.HasPage(DataStore.Next)
 						);
 				}
 
@@ -163,10 +161,10 @@ namespace LogViewer
 						(
 						() =>
 						{
-							JObjectCollection = _dataStore.LastPage();
+							JObjectCollection = _dataStore.GetPage(DataStore.Last);
 							NotifyAll();
 						},
-                        () => _dataStore.HasLastPage()
+                        () => _dataStore.HasPage(DataStore.Last)
 						);
 				}
 
@@ -202,7 +200,7 @@ namespace LogViewer
 			set
 			{
                 _dataStore.UserDefinedPageSize = value;
-				JObjectCollection = _dataStore.ResizeCurrentPage();
+				JObjectCollection = _dataStore.ResizePage();
 				NotifyAll();
 			}
 		}
@@ -211,14 +209,9 @@ namespace LogViewer
 		{
 			get
 			{
-				if (_dataStore.IsHydrated)
-				{
-					List<int> possibleOptions = new List<int> {50, 100, 200, 500, 1000, 5000, 10000};
-					possibleOptions = possibleOptions.Where(s => s < _dataStore.TotalRecordCount).ToList();
-					return possibleOptions.ToArray();
-				}
-
-				return new[] {0};
+				List<int> possibleOptions = new List<int> {50, 100, 200, 500, 1000, 5000, 10000};
+				possibleOptions = possibleOptions.Where(s => s < _dataStore.GetTotalRecordCount()).ToList();
+				return possibleOptions.ToArray();
 			}
 		}
 
@@ -229,7 +222,7 @@ namespace LogViewer
 		/// <param name="ascending">Set to true if the sort</param>
 		public void Sort(string sortColumn)
 		{
-			JObjectCollection = _dataStore.ApplySort(sortColumn);
+			JObjectCollection = _dataStore.SortBy(sortColumn);
 			NotifyAll();
 		}
 
@@ -238,9 +231,16 @@ namespace LogViewer
 		/// </summary>
 		private void InitDataStore()
 		{
-            _dataStore = new DataStore();
-            _dataStore.LoadFile();
-			JObjectCollection = _dataStore.FirstPage();
+			// Create an instance of the open file dialog box.
+			OpenFileDialog openFileDialog = new OpenFileDialog();
+
+			// Call the ShowDialog method to show the dialog box. Process input if the user clicked OK.
+			if (openFileDialog.ShowDialog() == false) return;
+			if (string.IsNullOrWhiteSpace(openFileDialog.FileName)) return;
+			// check if file exists
+
+            _dataStore = new DataStore(openFileDialog.FileName, 0);
+			JObjectCollection = _dataStore.GetPage(DataStore.First);
 			NotifyAll();
 		}
 
