@@ -26,17 +26,25 @@ namespace LogViewer
 
 		private ICommand _nextCommand;
 
-		private ICommand _openFileCommand;
+        private ICommand _openFileCommand;
+
+        private ICommand _openFileAsStreamCommand;
 
 		private ICommand _lastCommand;
 
+        private ICommand _reverseOrderCommand;
+
         private DataStore _dataStore;
 
-		#endregion
+        private const int MaxSectionSize = 1000;
+
+	    #endregion
 
 		public MainViewModel()
 		{
-			InitDataStore();
+		    //InitDataStore(isFileStream: false);
+            JObjectCollection = new JEnumerable<JObject>();
+            _dataStore = new DataStore(" ", 0);
 		}
 
         public bool IsLargeFile()
@@ -65,6 +73,8 @@ namespace LogViewer
 			}
 		}
 
+        #region Page Navigation
+
 		/// <summary>
 		/// Gets the information for text block in the navigation control
 		/// </summary>
@@ -90,7 +100,7 @@ namespace LogViewer
 						() =>
 						{
 							JObjectCollection = _dataStore.GetPage(DataStore.First);
-							NotifyAll();
+                            NotifyPropertyChanged("GetNavigationInfo");
 						},
 						() => _dataStore.HasPage(DataStore.Previous)
 						);
@@ -114,7 +124,7 @@ namespace LogViewer
 						() =>
 						{
 							JObjectCollection = _dataStore.GetPage(DataStore.Previous);
-							NotifyAll();
+                            NotifyPropertyChanged("GetNavigationInfo");
 						},
 						() => _dataStore.HasPage(DataStore.Previous)
 						);
@@ -138,7 +148,7 @@ namespace LogViewer
 						() =>
 						{
 							JObjectCollection = _dataStore.GetPage(DataStore.Next);
-							NotifyAll();
+                            NotifyPropertyChanged("GetNavigationInfo");
 						},
 						() => _dataStore.HasPage(DataStore.Next)
 						);
@@ -162,7 +172,7 @@ namespace LogViewer
 						() =>
 						{
 							JObjectCollection = _dataStore.GetPage(DataStore.Last);
-							NotifyAll();
+							NotifyPropertyChanged("GetNavigationInfo");
 						},
                         () => _dataStore.HasPage(DataStore.Last)
 						);
@@ -172,7 +182,9 @@ namespace LogViewer
 			}
 		}
 
-		/// <summary>
+        #endregion
+
+        /// <summary>
 		/// Gets the command for opening a log file
 		/// </summary>
 		public ICommand OpenFileCommand
@@ -183,7 +195,7 @@ namespace LogViewer
 				{
 					_openFileCommand = new RelayCommand
 						(
-						InitDataStore
+						() => InitDataStore(isFileStream: false)
 						);
 				}
 
@@ -195,9 +207,35 @@ namespace LogViewer
 		{
 			get
 			{
-				return new RelayCommand(null);
+                if (_openFileAsStreamCommand == null)
+                {
+                    _openFileAsStreamCommand = new RelayCommand
+                        (
+                        () => InitDataStore(isFileStream: true)
+                        );
+                }
+
+                return _openFileAsStreamCommand;
 			}
 		}
+
+        public ICommand ReverseOrderCommand
+        {
+            get
+            {
+                if (_reverseOrderCommand == null)
+                {
+                    _reverseOrderCommand = new RelayCommand
+                        (
+                        () => _dataStore.ReverseOrder()
+                        );
+                }
+
+                return _reverseOrderCommand;
+            }
+        }
+
+        #region Page Sizing
 
 		/// <summary>
 		/// The number of items to display in a page
@@ -208,17 +246,22 @@ namespace LogViewer
 			set
 			{
                 _dataStore.UserDefinedPageSize = value;
-				JObjectCollection = _dataStore.ResizePage();
-				NotifyAll();
+                JObjectCollection = _dataStore.ResizePage(); 
+                NotifyPropertyChanged("GetNavigationInfo");
 			}
 		}
+
+	    public bool PageSizingEnabled
+	    {
+            get { return _dataStore.GetTotalRecordCount() > 50; }
+	    }
 
 		public int[] PageSizeOptions
 		{
 			get
 			{
 				if(_dataStore.GetTotalRecordCount() == 0)
-					return new[] {0};
+					return new[] {1};
 
 				List<int> possibleOptions = new List<int> {50, 100, 200, 500, 1000, 5000, 10000};
 				possibleOptions = possibleOptions.Where(s => s < _dataStore.GetTotalRecordCount()).ToList();
@@ -226,7 +269,18 @@ namespace LogViewer
 			}
 		}
 
-		/// <summary>
+        #endregion
+
+        #region Document Section
+
+	    public bool DocSectionEnabled
+	    {
+	        get { return _dataStore.GetTotalRecordCount() > MaxSectionSize; } 
+	    }
+
+	    #endregion
+
+        /// <summary>
 		/// Sorts the list of products.
 		/// </summary>
 		/// <param name="sortColumn">The column or member that is the basis for sorting.</param>
@@ -240,7 +294,7 @@ namespace LogViewer
 		/// <summary>
 		/// Refreshes the list of log entries. Called by navigation commands.
 		/// </summary>
-		private void InitDataStore()
+		private void InitDataStore(bool isFileStream)
 		{
 			// Create an instance of the open file dialog box.
 			OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -279,6 +333,12 @@ namespace LogViewer
 		private void NotifyAll()
 		{
 			NotifyPropertyChanged("GetNavigationInfo");
+            NotifyPropertyChanged("PageSizingEnabled");
+            NotifyPropertyChanged("PageSizeOptions");
+            NotifyPropertyChanged("PageSize");
+            NotifyPropertyChanged("DocSectionEnabled");
 		}
+
+        
 	}
 }

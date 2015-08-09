@@ -88,7 +88,16 @@ namespace LogViewer
 		
 		public string GetPageNavigationString()
 		{
-			return (StartRowIndex + 1) + " to " + (StartRowIndex + PageSize) + " of " + TotalRecordCount;
+		    var from = StartRowIndex + 1;
+		    var to = StartRowIndex + PageSize;
+            
+            to = (to < TotalRecordCount) ? to : TotalRecordCount;
+		    from = (from < to) ? from : to;
+
+		    if (TotalRecordCount == 0)
+		        return "No records";
+
+			return from + " to " + to + " of " + TotalRecordCount;
 		}
 
 		public IJEnumerable<JObject> GetPage(string page)
@@ -148,6 +157,13 @@ namespace LogViewer
 
 			return GetPageAt(StartRowIndex, PageSize);
 		}
+
+	    public IJEnumerable<JObject> ReverseOrder()
+	    {
+	        _jObjectsEnumerable.Reverse();
+
+	        return _jObjectsEnumerable.AsJEnumerable();
+	    } 
 		
 		public IJEnumerable<JObject> SortBy(string sortColumn)
 		{

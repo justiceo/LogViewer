@@ -77,6 +77,17 @@ namespace LogViewer
 		{
 			
 		}
+
+	    private void LogDataGrid_OnLoaded(object sender, RoutedEventArgs e)
+	    {
+	        // init page sizing
+            PageSizeCombobox.SetBinding(ComboBox.ItemsSourceProperty, new Binding("PageSizeOptions"));
+            PageSizeCombobox.SetBinding(ComboBox.SelectedValueProperty, new Binding("PageSize"));
+
+            
+
+	        // init doc sections
+	    }
 	}
 }
 
