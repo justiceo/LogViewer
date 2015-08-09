@@ -61,22 +61,11 @@ namespace LogViewer
 			Application.Current.Shutdown();
 		}
 
-		private void PageSizeCombobox_OnLoaded(object sender, RoutedEventArgs e)
-		{
-			// set the default page size
-			PageSizeCombobox.SelectedValue = PageSizeCombobox.Items.GetItemAt(0).ToString();
-		}
-
 	    private void LogDataGrid_OnLoadingRow(object sender, DataGridRowEventArgs e)
 	    {
             MainViewModel mainViewModel = (MainViewModel)DataContext;
             e.Row.Header = (mainViewModel.StartRowIndex() + e.Row.GetIndex() + 1).ToString();
 	    }
-
-		private void PageSectionCombobox_OnLoaded(object sender, RoutedEventArgs e)
-		{
-			
-		}
 
 	    private void LogDataGrid_OnLoaded(object sender, RoutedEventArgs e)
 	    {
@@ -84,9 +73,9 @@ namespace LogViewer
             PageSizeCombobox.SetBinding(ComboBox.ItemsSourceProperty, new Binding("PageSizeOptions"));
             PageSizeCombobox.SetBinding(ComboBox.SelectedValueProperty, new Binding("PageSize"));
 
-            
 
-	        // init doc sections
+
+            // init doc sections
 	    }
 	}
 }

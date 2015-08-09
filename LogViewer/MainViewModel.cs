@@ -227,13 +227,18 @@ namespace LogViewer
                 {
                     _reverseOrderCommand = new RelayCommand
                         (
-                        () => _dataStore.ReverseOrder()
+                        ReverseOrder
                         );
                 }
 
                 return _reverseOrderCommand;
             }
         }
+
+	    private void ReverseOrder()
+	    {
+	        JObjectCollection = _dataStore.ReverseOrder();
+	    }
 
         #region Page Sizing
 

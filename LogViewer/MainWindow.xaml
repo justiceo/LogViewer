@@ -12,7 +12,9 @@
 				<MenuItem Header="_Exit" Click="ExitHandler" />
 			</MenuItem>
 			<MenuItem Header="_Edit " Height="27" Width="58" Padding="19,5,8,3" />
-			<MenuItem Header="_View " Height="27" Width="69" Padding="19,5,8,3" />
+			<MenuItem Header="_View " Height="27" Width="69" Padding="19,5,8,3">
+                <MenuItem Header="_Most Recent First" IsCheckable="True" IsChecked="False" Command="{Binding ReverseOrderCommand}" />
+             </MenuItem>
 			<MenuItem Header="_Help " Height="27" Width="66" Padding="19,5,8,3" />
 		</Menu>
 		<DataGrid 
