@@ -18,7 +18,7 @@ namespace LogViewer
 		protected int TotalRecordCount;
 		protected readonly int DefaultStartRowIndex;
 		protected int StartRowIndex = 0;
-		protected int PageSize = 100;
+		protected int PageSize = 50;
 
 		private List<JObject> _jObjectsEnumerable;
 		private string _currentSortColumn = "";
@@ -52,7 +52,7 @@ namespace LogViewer
 			TotalRecordCount = 0;
 		}
 
-		public void LoadFile() {
+		public virtual void LoadFile() {
 
 			// read just enough to paint the screen
 			StreamReader streamReader = File.OpenText(SourceFileName);
@@ -100,7 +100,7 @@ namespace LogViewer
 			return from + " to " + to + " of " + TotalRecordCount;
 		}
 
-		public IJEnumerable<JObject> GetPage(string page)
+		public virtual IJEnumerable<JObject> GetPage(string page)
 		{
 			switch (page)
 			{
@@ -147,7 +147,7 @@ namespace LogViewer
 			}
 		}
 
-		public IJEnumerable<JObject> ResizePage()
+		public virtual IJEnumerable<JObject> ResizePage()
 		{
 			PageSize = UserDefinedPageSize;
 
@@ -158,14 +158,14 @@ namespace LogViewer
 			return GetPageAt(StartRowIndex, PageSize);
 		}
 
-	    public IJEnumerable<JObject> ReverseOrder()
+	    public virtual IJEnumerable<JObject> ReverseOrder()
 	    {
 	        _jObjectsEnumerable.Reverse();
 
 	        return _jObjectsEnumerable.AsJEnumerable();
 	    } 
 		
-		public IJEnumerable<JObject> SortBy(string sortColumn)
+		public virtual IJEnumerable<JObject> SortBy(string sortColumn)
 		{
 			// if we clicked on the same column twice, we reverse the order
 			if (!string.IsNullOrEmpty(_currentSortColumn) && _currentSortColumn.Equals(sortColumn))
@@ -184,7 +184,7 @@ namespace LogViewer
 			return GetPage(First);
 		}
 
-		private IJEnumerable<JObject> GetPageAt(int start, int pageSize)
+		protected virtual IJEnumerable<JObject> GetPageAt(int start, int pageSize)
 		{
 			// consider removing pageSize as parameter
 			var paginatedData = new List<JObject>();
