@@ -9,36 +9,41 @@ namespace LogViewer
 {
 	public class CacheDataStore : DataStore
 	{
-		private Dictionary<string, List<JObject>> _cache;
+        private Dictionary<string, IJEnumerable<JObject>> _cache;
 		private string _lastRequestPage;
 		private int _lastRequestedStart;
 		private Task _refreshTask;
 		private int _fileCurrentPosition = 0;
 		private StreamReader _streamReader; 
 		
-		public Task InitCache;
 
 		public CacheDataStore(string sourceFileName, int startIndex) : base(sourceFileName, startIndex)
 		{
-			_cache = new Dictionary<string, List<JObject>>();
+            _cache = new Dictionary<string, IJEnumerable<JObject>>();
 		}
-		public void LoadFile()
+		public override void LoadFile()
 		{
+            // get doc size
+		    _streamReader = File.OpenText(SourceFileName);
+            while (_streamReader.ReadLine() != null) TotalRecordCount++;
+
 			// load first and last pages into cache
 			_cache[First] = GetPageAt(DefaultStartRowIndex, PageSize);
 			var lastPageStart = TotalRecordCount - (TotalRecordCount % PageSize == 0 ? PageSize : TotalRecordCount % PageSize);
 			_cache[Last] = GetPageAt(lastPageStart, TotalRecordCount - lastPageStart);
 
 			// instantiate the rest
-			_cache[Next] = new List<JObject>();
-			_cache[Previous] = new List<JObject>();
+            _cache[Next] = new JEnumerable<JObject>();
+            _cache[Previous] = new JEnumerable<JObject>();
+
+		    _lastRequestPage = First;
+            _refreshTask = new Task(RefreshCache);
+            _refreshTask.Start();
 		}
 
-		public List<JObject> GetPage(string page)
+        public override IJEnumerable<JObject> GetPage(string page)
 		{
-			InitCache.Wait();
-
-			if (_refreshTask.Status == TaskStatus.Running)
+			if (_refreshTask.Status == TaskStatus.Running || _refreshTask.Status == TaskStatus.WaitingForActivation || _refreshTask.Status == TaskStatus.WaitingToRun)
 				_refreshTask.Wait();
 
 			_lastRequestPage = page;
@@ -87,8 +92,6 @@ namespace LogViewer
 		/// </summary>
 		private void RefreshCache()
 		{
-			InitCache.Wait();
-
 			switch (_lastRequestPage)
 			{
 				case First:
@@ -108,7 +111,7 @@ namespace LogViewer
 			}
 		}
 
-		public List<JObject> ResizePage()
+		public override IJEnumerable<JObject> ResizePage()
 		{
 			PageSize = UserDefinedPageSize;
 
@@ -129,14 +132,21 @@ namespace LogViewer
 			return GetPageAt(StartRowIndex, PageSize);
 		}
 
-		private List<JObject> GetPageAt(int startIndex, int pageSize)
+        protected override IJEnumerable<JObject> GetPageAt(int startIndex, int pageSize)
 		{
 			List<JObject> jObjectsList = new List<JObject>();
-
-			if (_streamReader == null || _streamReader.EndOfStream)
-				_streamReader = File.OpenText(SourceFileName);
-
-			// if we're requesting the first or last page, return them from cache
+            
+            if (_streamReader == null)
+            {
+                _streamReader = new StreamReader(SourceFileName);
+            }
+            if (_streamReader.EndOfStream)
+            {
+                _streamReader.Close();
+                
+                _streamReader = new StreamReader(SourceFileName);
+            }
+            // if we're requesting the first or last page, return them from cache
 			if (startIndex < pageSize && _cache.ContainsKey(First))
 				return _cache[First];
 			if (startIndex + pageSize >= TotalRecordCount && _cache.ContainsKey(Last))
@@ -146,24 +156,24 @@ namespace LogViewer
 			if (_fileCurrentPosition > startIndex)
 			{
 				// restart stream
-				_streamReader.Close();
-				_streamReader = File.OpenText(SourceFileName);
+                _streamReader.Close();
+				_streamReader = new StreamReader(SourceFileName);
 				_fileCurrentPosition = 0;
 			}
+            string line;
 			while (_fileCurrentPosition < startIndex && _streamReader.ReadLine() != null)
 			{
 				_fileCurrentPosition++;
 			}
 
 			// perform the read and convert
-			string line;
 			while ((_fileCurrentPosition < startIndex + pageSize) && (line = _streamReader.ReadLine()) != null)
 			{
 				jObjectsList.Add(JsonConvert.DeserializeObject<JObject>(line));
 				_fileCurrentPosition++;
 			}
 
-			return jObjectsList;
+			return jObjectsList.AsJEnumerable();
 		}
 
 		

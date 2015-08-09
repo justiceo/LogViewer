@@ -317,7 +317,10 @@ namespace LogViewer
 			}
 			// check if file exists
 
-            _dataStore = new DataStore(openFileDialog.FileName, 0);
+            _dataStore = isFileStream 
+                ? new CacheDataStore(openFileDialog.FileName, 0)  
+                : new DataStore(openFileDialog.FileName, 0);
+
 			_dataStore.LoadFile();
 			JObjectCollection = _dataStore.GetPage(DataStore.First);
 			NotifyAll();
