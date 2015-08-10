@@ -11,7 +11,7 @@
 				<MenuItem Header="_Open File As Stream" Command="{Binding OpenAsStreamCommand}" />
 				<MenuItem Header="_Exit" Click="ExitHandler" />
 			</MenuItem>
-			<MenuItem Header="_Filter " Height="27" Width="58" Padding="19,5,8,3" />
+			<MenuItem Header="_Filter " Click="FilterMenuItem_OnClick" Height="27" Width="58" Padding="19,5,8,3" />
 			<MenuItem Header="_View " Height="27" Width="69" Padding="19,5,8,3">
                 <MenuItem Header="_Most Recent First" IsCheckable="True" IsChecked="False" Command="{Binding ReverseOrderCommand}" />
              </MenuItem>

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -72,10 +73,15 @@ namespace LogViewer
 	        // init page sizing
             PageSizeCombobox.SetBinding(ComboBox.ItemsSourceProperty, new Binding("PageSizeOptions"));
             PageSizeCombobox.SetBinding(ComboBox.SelectedValueProperty, new Binding("PageSize"));
-
-
-
+            
             // init doc sections
+
+	    }
+
+	    private void FilterMenuItem_OnClick(object sender, RoutedEventArgs e)
+	    {
+	        FilterWindow filterWindow = new FilterWindow();
+	        filterWindow.ShowDialog();
 	    }
 	}
 }
