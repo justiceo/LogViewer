@@ -70,6 +70,7 @@
     </Compile>
     <Compile Include="CacheDataStore.cs" />
     <Compile Include="DataStore.cs" />
+    <Compile Include="FilterObject.cs" />
     <Compile Include="FilterViewModel.cs" />
     <Compile Include="FilterWindow.xaml.cs">
       <DependentUpon>FilterWindow.xaml</DependentUpon>

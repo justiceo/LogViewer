@@ -80,8 +80,14 @@ namespace LogViewer
 
 	    private void FilterMenuItem_OnClick(object sender, RoutedEventArgs e)
 	    {
-	        FilterWindow filterWindow = new FilterWindow();
+			List<string> columnNames = new List<string>();
+		    foreach (var dataGridColumn in LogDataGrid.Columns)
+		    {
+			    columnNames.Add(dataGridColumn.Header.ToString());
+		    }
+	        FilterWindow filterWindow = new FilterWindow(columnNames);
 	        filterWindow.ShowDialog();
+		    var result = filterWindow.GetFilterObjectsList();
 	    }
 	}
 }

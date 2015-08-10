@@ -19,9 +19,15 @@ namespace LogViewer
     /// </summary>
     public partial class FilterWindow : Window
     {
-        public FilterWindow()
+        public FilterWindow(List<string> columnNames )
         {
             InitializeComponent();
+			DataContext = new FilterViewModel(columnNames);
         }
+
+	    public List<FilterObject> GetFilterObjectsList()
+	    {
+			return new List<FilterObject>();
+	    }
     }
 }
