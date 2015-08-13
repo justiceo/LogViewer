@@ -72,10 +72,10 @@ namespace LogViewer
 	        // init page sizing
             PageSizeCombobox.SetBinding(ComboBox.ItemsSourceProperty, new Binding("PageSizeOptions"));
             PageSizeCombobox.SetBinding(ComboBox.SelectedValueProperty, new Binding("PageSize"));
-
-
-
+			
             // init doc sections
+			DocSectionCombobox.SetBinding(ComboBox.ItemsSourceProperty, new Binding("DocSections"));
+			DocSectionCombobox.SetBinding(ComboBox.SelectedValueProperty, new Binding("SelectedDocSection"));
 	    }
 	}
 }

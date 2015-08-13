@@ -16,13 +16,14 @@ namespace LogViewer
 		
 		protected readonly string SourceFileName;
 		protected int TotalRecordCount;
-		protected readonly int DefaultStartRowIndex;
+		public int DefaultStartRowIndex;
 		protected int StartRowIndex = 0;
 		protected int PageSize = 50;
 
 		private List<JObject> _jObjectsEnumerable;
 		private string _currentSortColumn = "";
 		private bool _isSortOrderAscending = true;
+		private int _largeFileEntireLinesCount;
 
 		#endregion
 
@@ -41,6 +42,7 @@ namespace LogViewer
 		public bool IsReadingFile;
 		public int UserDefinedPageSize = 50;
 		public bool IsLargeFile;
+		public int DocSectionSize;
 
 		#endregion
 
@@ -50,6 +52,7 @@ namespace LogViewer
 			_jObjectsEnumerable = new List<JObject>();
 			DefaultStartRowIndex = startIndex;
 			TotalRecordCount = 0;
+			DocSectionSize = 10000;
 		}
 
 		public virtual void LoadFile() {
@@ -69,7 +72,12 @@ namespace LogViewer
 			streamReader.Close();
 
 			// determine if large file and split into sections
-			IsLargeFile = false; // (_totalRecordCount > 1000);
+			IsLargeFile = TotalRecordCount > DocSectionSize;
+			if (IsLargeFile)
+			{
+				_largeFileEntireLinesCount = TotalRecordCount;
+				TotalRecordCount = DocSectionSize;
+			}
 
 			// spin off a thread to read rest of file
 			Task readRestofFile = new Task(ReadRestofFileT);
@@ -206,16 +214,31 @@ namespace LogViewer
 		
 		private void ReadRestofFileT()
 		{
+			// prepare errand variables
 			StreamReader streamReader = File.OpenText(SourceFileName);
 			string line = String.Empty;
-			int i = 0;
-			// lets make up for first read rows
-			while (i < PageSize * 2 && streamReader.ReadLine() != null) i++; // because we read the line even on the 199th iteration
-			while ((line = streamReader.ReadLine()) != null)
-			{
-				_jObjectsEnumerable.Add(JsonConvert.DeserializeObject<JObject>(line));
+			int counter = 0;
 
+			// lets make up for first read rows
+			while (counter < PageSize * 2 && streamReader.ReadLine() != null) counter++;
+
+			if (IsLargeFile) // Just read first chunk
+			{
+				while (counter < DocSectionSize && (line = streamReader.ReadLine()) != null)
+				{
+					_jObjectsEnumerable.Add(JsonConvert.DeserializeObject<JObject>(line));
+					counter++;
+				}
 			}
+			else
+			{
+				while ((line = streamReader.ReadLine()) != null)
+				{
+					_jObjectsEnumerable.Add(JsonConvert.DeserializeObject<JObject>(line));
+				}
+			}
+			
+			
 			streamReader.Close();
 			IsReadingFile = false;
 		}
