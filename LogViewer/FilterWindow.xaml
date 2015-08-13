@@ -15,15 +15,58 @@
 				Text="{Binding Path=FilterTextAreaValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 			<Button HorizontalAlignment="Left" VerticalAlignment="Top" Width="79" Content="Add Filter" Height="32" Command="{Binding AddFilterObjectCommand}"  />
 		</StackPanel>
-		<ScrollViewer HorizontalAlignment="Left" Height="277" Margin="10,57,0,-282" VerticalAlignment="Top" Width="421" Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}">
-			<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Margin="0, 10, 0, 0" Height="27" Width="auto" Background="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}">
-				<TextBlock 
-					TextWrapping="Wrap" 
-					Margin="0,0,10,0" 
-					Padding="5,5"
-					Width="371">Column x contains y</TextBlock>
-				<Button Content="X" Width="23"/>
-			</StackPanel>
+		<ScrollViewer 
+			HorizontalAlignment="Left" 
+			Height="277" 
+			Margin="0,57,0,-282"
+			Padding="10,0,0,0"
+			VerticalAlignment="Top" 
+			Width="444" 
+			HorizontalScrollBarVisibility="Disabled"
+			VerticalScrollBarVisibility="Auto"
+			Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}">
+				<Grid Width="411" Height="Auto">
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,10,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Level : Contains 'DEBUG' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,50,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Message : Contains 'SELECT from column 5 where...' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,90,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Level : Contains 'DEBUG' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,130,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Message : Contains 'SELECT from column 5 where...' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,170,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Level : Contains 'DEBUG' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,210,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Message : Contains 'SELECT from column 5 where...' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,250,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Level : Contains 'DEBUG' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,290,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Message : Contains 'SELECT from column 5 where...' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,330,10,0" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Level : Contains 'DEBUG' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="30" Margin="10,370,10,10" Background="{DynamicResource {x:Static SystemColors.ControlLightLightBrushKey}}">
+						<TextBlock Width="343" Margin="0,0,15,0" Text="Message : Contains 'SELECT from column 5 where...' " Padding="5" />
+						<Button Width="32" Content="X" />
+					</StackPanel>
+				</Grid>
 		</ScrollViewer>
 		<DockPanel HorizontalAlignment="Left" Height="52" LastChildFill="False" VerticalAlignment="Top" Width="100"/>
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Height="55" Margin="0,0,21,-354" VerticalAlignment="Bottom" Width="224">
