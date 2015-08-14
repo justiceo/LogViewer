@@ -36,8 +36,6 @@ namespace LogViewer
 
         private DataStore _dataStore;
 
-        private const int MaxSectionSize = 1000;
-
 	    #endregion
 
 		public MainViewModel()
@@ -265,6 +263,7 @@ namespace LogViewer
 		{
 			get
 			{
+				// consider processing and returning this value from dataStore
 				if(_dataStore.GetTotalRecordCount() == 0)
 					return new[] {1};
 
@@ -280,10 +279,21 @@ namespace LogViewer
 
 	    public bool DocSectionEnabled
 	    {
-	        get { return _dataStore.GetTotalRecordCount() > MaxSectionSize; } 
+	        get { return _dataStore.IsLargeFile; } 
 	    }
 
-	    #endregion
+		public int[] DocSections
+		{
+			get { return new[] {1,2}; }
+		}
+
+		public int SelectedDocSection
+		{
+			get { return _dataStore.GetTotalRecordCount()/_dataStore.DocSectionSize; }
+			set { _dataStore.DefaultStartRowIndex = value; }
+		}
+
+		#endregion
 
         /// <summary>
 		/// Sorts the list of products.
