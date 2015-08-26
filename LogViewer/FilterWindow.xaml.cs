@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ namespace LogViewer
     /// </summary>
     public partial class FilterWindow : Window
     {
-        public FilterWindow(List<string> columnNames )
+		public FilterWindow(List<string> columnNames )
         {
             InitializeComponent();
 			DataContext = new FilterViewModel(columnNames);
@@ -27,7 +28,16 @@ namespace LogViewer
 
 	    public List<FilterObject> GetFilterObjectsList()
 	    {
+		    FilterViewModel filterViewModel = DataContext as FilterViewModel;
+		    if (filterViewModel != null) 
+				return filterViewModel.FilterObjects.ToList();
+
 			return new List<FilterObject>();
 	    }
+	   
     }
+
+
+
+
 }

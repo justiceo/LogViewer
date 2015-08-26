@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using GalaSoft.MvvmLight.CommandWpf;
 
@@ -11,27 +15,19 @@ namespace LogViewer
 {
     public class FilterViewModel
     {
-		#region INotifyPropertyChanged Members
-
-		public event PropertyChangedEventHandler PropertyChanged;
-
-		#endregion
-
-		private List<FilterObject> _filterObjects;
-	    private ICommand _addFilterObjectCommand;
-	    private ICommand _applyFilterCommand;
+		private ICommand _applyFilterCommand;
 	    private ICommand _clearFiltersCommand;
-	    private readonly List<string> _columnNames; 
-
-	    public FilterViewModel(List<string> columnNames )
+	    private ICommand _addFilterCommand;
+	    private ICommand _removeFilterCommand;
+	    private List<string> _columnNames;
+		
+		public FilterViewModel(List<string> columnNames)
 	    {
-			_filterObjects = new List<FilterObject>();
+			FilterObjects = new ObservableCollection<FilterObject>();
+			ColumnNames = new ObservableCollection<string>(columnNames);
 		    _columnNames = columnNames;
 	    }
-
-
-		public string ColumnsComboBoxSelectedValue { get; set; }
-
+		
 		/// <summary>
 		/// Bound to the filter text input on the filter form
 		/// </summary>
@@ -41,39 +37,57 @@ namespace LogViewer
 		/// Bound to the selectedValue of column names combo box
 		/// </summary>
 		public string SelectedColumn { get; set; }
-		
-		public ICommand AddFilterObjectCommand
-		{
-			get
-			{
-				if (_addFilterObjectCommand == null)
-				{
-					_addFilterObjectCommand = new RelayCommand(
-						AddFilterObject,
-						CanAddFilterObject
-						);
-				}
-				return _addFilterObjectCommand;
-			}
-		}
 
-	    public ICommand ApplyFilterCommand
+		/// <summary>
+		/// Bound to the column names combobox in the filter window
+		/// </summary>
+		public ObservableCollection<string> ColumnNames { get; set; }
+
+		/// <summary>
+		/// Bound to list box control for filters added
+		/// </summary>
+		public ObservableCollection<FilterObject> FilterObjects { get; set; }
+
+	    public ICommand AddFilterCommand
 	    {
 		    get
 		    {
-			    if (_applyFilterCommand == null)
+			    if (_addFilterCommand == null)
 			    {
-				    _applyFilterCommand = new RelayCommand(
+				    _addFilterCommand = new RelayCommand(
 					    () =>
 					    {
-						    ApplyFilter();
+							if (String.IsNullOrEmpty(SelectedColumn) || String.IsNullOrWhiteSpace(FilterTextAreaValue))
+								return;
+
+						    FilterObject filterObject = new FilterObject { ColumnName = SelectedColumn, FilterCriteria = FilterTextAreaValue };
+						    FilterObjects.Add(filterObject);
+						    ColumnNames.Remove(SelectedColumn);
 					    },
-						() => _filterObjects.Count > 0
+						() => ColumnNames.Count > 0
 					    );
 			    }
-			    return _applyFilterCommand;
+			    return _addFilterCommand;
 		    }
 	    }
+
+		public ICommand ApplyFilterCommand
+		{
+			get
+			{
+				if (_applyFilterCommand == null)
+				{
+					_applyFilterCommand = new RelayCommand(
+						() =>
+						{
+
+						},
+						() => FilterObjects.Count > 0
+						);
+				}
+				return _applyFilterCommand;
+			}
+		}
 
 		public ICommand ClearFiltersCommand
 		{
@@ -82,78 +96,39 @@ namespace LogViewer
 				if (_clearFiltersCommand == null)
 				{
 					_clearFiltersCommand = new RelayCommand(
-						ClearFilters,
-						() => _filterObjects.Count > 0
+						() =>
+						{
+							FilterObjects.Clear();
+							foreach (var columnName in _columnNames.Where(columnName => !ColumnNames.Contains(columnName)))
+							{
+								ColumnNames.Add(columnName);
+							}
+						},
+						() => FilterObjects.Count > 0
 						);
 				}
 				return _clearFiltersCommand;
 			}
 		}
 
-		/// <summary>
-		/// Bound to the column names combobox in the filter window
-		/// </summary>
-		public List<string> ColumnNames {
-			get { return _columnNames; }
-		}
-
-	    public List<FilterObject> FilterObjectsList
+		public ICommand RemoveFilterObjectCommand(string columnName)
 	    {
-		    get { return _filterObjects; }
-			set { _filterObjects = value;  }
+		    if (_removeFilterCommand == null)
+		    {
+				_removeFilterCommand = new RelayCommand(
+				    () =>
+				    {
+					    if (String.IsNullOrEmpty(columnName))
+						    return;
+
+					    var filterObject = FilterObjects.FirstOrDefault(x => x.ColumnName.Equals(columnName));
+					    FilterObjects.Remove(filterObject);
+					    ColumnNames.Add(columnName);
+				    },
+				    () => true
+				    );
+		    }
+			return _removeFilterCommand;
 	    }
-
-	    private void ApplyFilter()
-	    {
-		    
-	    }
-
-		private void ClearFilters()
-		{
-			_filterObjects.Clear();
-		}
-
-		private void AddFilterObject()
-		{
-			if (String.IsNullOrWhiteSpace(SelectedColumn) || String.IsNullOrWhiteSpace(FilterTextAreaValue))
-				return;
-
-			FilterObject filterObject = new FilterObject
-			{
-				ColumnName = SelectedColumn,
-				FilterCriteria = FilterTextAreaValue
-			};
-			_filterObjects.Add(filterObject);
-
-			SelectedColumn = "";
-			FilterTextAreaValue = "";
-			NotifyAll();
-		}
-
-	    private bool CanAddFilterObject()
-	    {
-		    if (_columnNames.Count == 0 || String.IsNullOrEmpty(SelectedColumn))
-			    return false;
-
-		    return true;
-	    }
-
-		private void NotifyPropertyChanged(string propertyName)
-		{
-			if (PropertyChanged != null)
-			{
-				PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-			}
-		}
-
-		private void NotifyAll()
-		{
-			NotifyPropertyChanged("ApplyFilterCommand");
-			NotifyPropertyChanged("ClearFiltersCommand");
-			NotifyPropertyChanged("AddFilterObjectCommand");
-			NotifyPropertyChanged("FilterObjectsList");
-			NotifyPropertyChanged("FilterTextAreaValue");
-			NotifyPropertyChanged("SelectedColumn");
-		}
     }
 }
