@@ -26,6 +26,8 @@ namespace LogViewer
 			DataContext = new FilterViewModel(columnNames);
         }
 
+
+
 	    public List<FilterObject> GetFilterObjectsList()
 	    {
 		    FilterViewModel filterViewModel = DataContext as FilterViewModel;
@@ -34,7 +36,11 @@ namespace LogViewer
 
 			return new List<FilterObject>();
 	    }
-	   
+
+	    private void ApplyFilter_OnClick(object sender, RoutedEventArgs e)
+	    {
+			Close();
+	    }
     }
 
 

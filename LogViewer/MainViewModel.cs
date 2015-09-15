@@ -357,6 +357,12 @@ namespace LogViewer
             NotifyPropertyChanged("DocSectionEnabled");
 		}
 
-        
+
+
+		public void Filter(List<FilterObject> filterCriteria)
+		{
+			JObjectCollection = _dataStore.Filter(filterCriteria);
+			NotifyAll();
+		}
 	}
 }

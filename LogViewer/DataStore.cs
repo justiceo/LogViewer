@@ -242,6 +242,19 @@ namespace LogViewer
 			streamReader.Close();
 			IsReadingFile = false;
 		}
-		
+
+
+		public virtual IJEnumerable<JObject> Filter(List<FilterObject> filterCriteria)
+		{
+			// perform the filtering
+			foreach (var filterCriterion in filterCriteria)
+			{
+				_jObjectsEnumerable = _jObjectsEnumerable.Where(c => c.GetValue(filterCriterion.ColumnName).ToString().Contains(filterCriterion.FilterCriteria)).ToList();
+			}
+
+			TotalRecordCount = _jObjectsEnumerable.Count();
+
+			return GetPage(First);
+		}
 	}
 }

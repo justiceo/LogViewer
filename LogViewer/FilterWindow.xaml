@@ -44,7 +44,7 @@
 		</ScrollViewer>
 		<DockPanel HorizontalAlignment="Left" Height="52" LastChildFill="False" VerticalAlignment="Top" Width="100"/>
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Height="55" Margin="0,0,21,-354" VerticalAlignment="Bottom" Width="224">
-			<Button Content="Apply Filter" HorizontalAlignment="Right" Width="87" Margin="40,8,0,18" Command="{Binding ApplyFilterCommand}"/>
+			<Button Content="Apply Filter" HorizontalAlignment="Right" Width="87" Margin="40,8,0,18" Click="ApplyFilter_OnClick"  Command="{Binding ApplyFilterCommand}"/>
 			<Button Content="Clear All" HorizontalAlignment="Right" Width="87"  Margin="10,8,0,18" Command="{Binding ClearFiltersCommand}"/>
 		</StackPanel>
 

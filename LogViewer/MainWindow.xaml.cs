@@ -21,11 +21,14 @@ namespace LogViewer
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-        
+		private FilterWindow filterWindow;
+		private MainViewModel mainViewModel;
+
 		public MainWindow()
 		{
 			InitializeComponent();
-			DataContext = new MainViewModel();
+			mainViewModel = new MainViewModel();
+			DataContext = mainViewModel;
 		}
 
 		/// <summary>
@@ -36,7 +39,6 @@ namespace LogViewer
 		private void LogDataGrid_OnSorting(object sender, DataGridSortingEventArgs e)
 		{
 			e.Handled = true;
-			MainViewModel mainViewModel = (MainViewModel)DataContext;
 			mainViewModel.Sort(e.Column.SortMemberPath);
 		}
 
@@ -48,7 +50,6 @@ namespace LogViewer
 		/// <param name="e"></param>
 		private void LogDataGrid_OnAutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
 		{
-            MainViewModel mainViewModel = (MainViewModel)DataContext;
             e.Column.CanUserSort = !mainViewModel.IsLargeFile();
 		}
 		
@@ -64,7 +65,6 @@ namespace LogViewer
 
 	    private void LogDataGrid_OnLoadingRow(object sender, DataGridRowEventArgs e)
 	    {
-            MainViewModel mainViewModel = (MainViewModel)DataContext;
             e.Row.Header = (mainViewModel.StartRowIndex() + e.Row.GetIndex() + 1).ToString();
 	    }
 
@@ -87,9 +87,10 @@ namespace LogViewer
 		    {
 			    columnNames.Add(dataGridColumn.Header.ToString());
 		    }
-	        FilterWindow filterWindow = new FilterWindow(columnNames);
+	        filterWindow = new FilterWindow(columnNames);
 	        filterWindow.ShowDialog();
-		    var result = filterWindow.GetFilterObjectsList();
+			var filterCriteria = filterWindow.GetFilterObjectsList();
+			mainViewModel.Filter(filterCriteria);
 	    }
 	}
 }

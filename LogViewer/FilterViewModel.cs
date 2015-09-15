@@ -80,7 +80,6 @@ namespace LogViewer
 					_applyFilterCommand = new RelayCommand(
 						() =>
 						{
-
 						},
 						() => FilterObjects.Count > 0
 						);
