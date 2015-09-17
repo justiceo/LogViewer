@@ -10,51 +10,34 @@ namespace LogViewer
 {
 	public class MainViewModel : INotifyPropertyChanged
 	{
-		#region INotifyPropertyChanged Members
-
-		public event PropertyChangedEventHandler PropertyChanged;
-
-		#endregion
-
+		
 		#region Private Fields
 
 		private IJEnumerable<JObject> _jObjectCollection;
-
 		private ICommand _firstCommand;
-
 		private ICommand _previousCommand;
-
 		private ICommand _nextCommand;
-
         private ICommand _openFileCommand;
-
         private ICommand _openFileAsStreamCommand;
-
 		private ICommand _lastCommand;
-
         private ICommand _reverseOrderCommand;
-
         private DataStore _dataStore;
 
 	    #endregion
 
 		public MainViewModel()
 		{
-		    //InitDataStore(isFileStream: false);
             JObjectCollection = new JEnumerable<JObject>();
             _dataStore = new DataStore(" ", 0);
 		}
+
+		public event PropertyChangedEventHandler PropertyChanged;
 
         public bool IsLargeFile()
         {
             return _dataStore.IsLargeFile;
         }
-
-        public int StartRowIndex()
-        {
-            return _dataStore.GetCurrentStartIndex();
-        }
-
+		
 		/// <summary>
 		/// The list of logEntries in the current page.
 		/// </summary>
@@ -72,6 +55,11 @@ namespace LogViewer
 		}
 
         #region Page Navigation
+
+		public int StartRowIndex()
+		{
+			return _dataStore.GetCurrentStartIndex();
+		}
 
 		/// <summary>
 		/// Gets the information for text block in the navigation control
@@ -91,20 +79,15 @@ namespace LogViewer
 		{
 			get
 			{
-				if (_firstCommand == null)
-				{
-					_firstCommand = new RelayCommand
-						(
-						() =>
-						{
-							JObjectCollection = _dataStore.GetPage(DataStore.First);
-                            NotifyPropertyChanged("GetNavigationInfo");
-						},
-						() => _dataStore.HasPage(DataStore.Previous)
-						);
-				}
-
-				return _firstCommand;
+				return _firstCommand ?? (_firstCommand = new RelayCommand
+					(
+					() =>
+					{
+						JObjectCollection = _dataStore.GetPage(Page.First);
+						NotifyPropertyChanged("GetNavigationInfo");
+					},
+					() => _dataStore.HasPage(Page.Previous)
+					));
 			}
 		}
 
@@ -115,20 +98,15 @@ namespace LogViewer
 		{
 			get
 			{
-				if (_previousCommand == null)
-				{
-					_previousCommand = new RelayCommand
-						(
-						() =>
-						{
-							JObjectCollection = _dataStore.GetPage(DataStore.Previous);
-                            NotifyPropertyChanged("GetNavigationInfo");
-						},
-						() => _dataStore.HasPage(DataStore.Previous)
-						);
-				}
-
-				return _previousCommand;
+				return _previousCommand ?? (_previousCommand = new RelayCommand
+					(
+					() =>
+					{
+						JObjectCollection = _dataStore.GetPage(Page.Previous);
+						NotifyPropertyChanged("GetNavigationInfo");
+					},
+					() => _dataStore.HasPage(Page.Previous)
+					));
 			}
 		}
 
@@ -139,20 +117,15 @@ namespace LogViewer
 		{
 			get
 			{
-				if (_nextCommand == null)
-				{
-					_nextCommand = new RelayCommand
-						(
-						() =>
-						{
-							JObjectCollection = _dataStore.GetPage(DataStore.Next);
-                            NotifyPropertyChanged("GetNavigationInfo");
-						},
-						() => _dataStore.HasPage(DataStore.Next)
-						);
-				}
-
-				return _nextCommand;
+				return _nextCommand ?? (_nextCommand = new RelayCommand
+					(
+					() =>
+					{
+						JObjectCollection = _dataStore.GetPage(Page.Next);
+						NotifyPropertyChanged("GetNavigationInfo");
+					},
+					() => _dataStore.HasPage(Page.Next)
+					));
 			}
 		}
 
@@ -163,20 +136,15 @@ namespace LogViewer
 		{
 			get
 			{
-				if (_lastCommand == null)
-				{
-					_lastCommand = new RelayCommand
-						(
-						() =>
-						{
-							JObjectCollection = _dataStore.GetPage(DataStore.Last);
-							NotifyPropertyChanged("GetNavigationInfo");
-						},
-                        () => _dataStore.HasPage(DataStore.Last)
-						);
-				}
-
-				return _lastCommand;
+				return _lastCommand ?? (_lastCommand = new RelayCommand
+					(
+					() =>
+					{
+						JObjectCollection = _dataStore.GetPage(Page.Last);
+						NotifyPropertyChanged("GetNavigationInfo");
+					},
+					() => _dataStore.HasPage(Page.Last)
+					));
 			}
 		}
 
@@ -189,15 +157,10 @@ namespace LogViewer
 		{
 			get
 			{
-				if (_openFileCommand == null)
-				{
-					_openFileCommand = new RelayCommand
-						(
-						() => InitDataStore(isFileStream: false)
-						);
-				}
-
-				return _openFileCommand;
+				return _openFileCommand ?? (_openFileCommand = new RelayCommand
+					(
+					() => InitDataStore(isFileStream: false)
+					));
 			}
 		}
 
@@ -205,15 +168,10 @@ namespace LogViewer
 		{
 			get
 			{
-                if (_openFileAsStreamCommand == null)
-                {
-                    _openFileAsStreamCommand = new RelayCommand
-                        (
-                        () => InitDataStore(isFileStream: true)
-                        );
-                }
-
-                return _openFileAsStreamCommand;
+				return _openFileAsStreamCommand ?? (_openFileAsStreamCommand = new RelayCommand
+					(
+					() => InitDataStore(isFileStream: true)
+					));
 			}
 		}
 
@@ -225,18 +183,13 @@ namespace LogViewer
                 {
                     _reverseOrderCommand = new RelayCommand
                         (
-                        ReverseOrder
+                        () => JObjectCollection = _dataStore.ReverseOrder()
                         );
                 }
 
                 return _reverseOrderCommand;
             }
         }
-
-	    private void ReverseOrder()
-	    {
-	        JObjectCollection = _dataStore.ReverseOrder();
-	    }
 
         #region Page Sizing
 
@@ -332,7 +285,7 @@ namespace LogViewer
                 : new DataStore(openFileDialog.FileName, 0);
 
 			_dataStore.LoadFile();
-			JObjectCollection = _dataStore.GetPage(DataStore.First);
+			JObjectCollection = _dataStore.GetPage(Page.First);
 			NotifyAll();
 		}
 
@@ -348,6 +301,9 @@ namespace LogViewer
 			}
 		}
 
+		/// <summary>
+		/// Fires property changed on this view models UI controls
+		/// </summary>
 		private void NotifyAll()
 		{
 			NotifyPropertyChanged("GetNavigationInfo");
@@ -356,9 +312,12 @@ namespace LogViewer
             NotifyPropertyChanged("PageSize");
             NotifyPropertyChanged("DocSectionEnabled");
 		}
-
-
-
+		
+		/// <summary>
+		/// Calls filter on the datastore
+		/// ***This functionality is not part of the viewmodel and needs to be refactored out.
+		/// </summary>
+		/// <param name="filterCriteria"></param>
 		public void Filter(List<FilterObject> filterCriteria)
 		{
 			JObjectCollection = _dataStore.Filter(filterCriteria);

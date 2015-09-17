@@ -26,16 +26,7 @@ namespace LogViewer
 		private int _largeFileEntireLinesCount;
 
 		#endregion
-
-		#region const
-
-		public const string First = "first";
-		public const string Previous = "previous";
-		public const string Next = "next";
-		public const string Last = "last";
-
-		#endregion
-
+		
 		#region Public Variables
 
 		public bool HasMultipleObjects = false;
@@ -108,26 +99,26 @@ namespace LogViewer
 			return from + " to " + to + " of " + TotalRecordCount;
 		}
 
-		public virtual IJEnumerable<JObject> GetPage(string page)
+		public virtual IJEnumerable<JObject> GetPage(Page page)
 		{
 			switch (page)
 			{
-				case First:
+				case Page.First:
 					PageSize = UserDefinedPageSize;
 					StartRowIndex = DefaultStartRowIndex;
 					break;
-				case Previous:
+				case Page.Previous:
 					PageSize = UserDefinedPageSize;
 					StartRowIndex -= PageSize;
 					break;
-				case Next:
+				case Page.Next:
 					StartRowIndex += PageSize;
 					if (StartRowIndex + PageSize > TotalRecordCount)
 						PageSize = TotalRecordCount - StartRowIndex;
 					else
 						PageSize = UserDefinedPageSize;
 					break;
-				case Last:
+				case Page.Last:
 					StartRowIndex = TotalRecordCount - (TotalRecordCount % PageSize == 0 ? PageSize : TotalRecordCount % PageSize);
 					PageSize = TotalRecordCount - StartRowIndex;
 					break;
@@ -136,17 +127,17 @@ namespace LogViewer
 			return GetPageAt(StartRowIndex, PageSize);
 		}
 
-		public bool HasPage(string page)
+		public bool HasPage(Page page)
 		{
 			switch (page)
 			{
-				case First:
+				case Page.First:
 					return StartRowIndex > DefaultStartRowIndex;
-				case Previous:
+				case Page.Previous:
 					return StartRowIndex > DefaultStartRowIndex;
-				case Next:
+				case Page.Next:
 					return TotalRecordCount > StartRowIndex + PageSize;
-				case Last:
+				case Page.Last:
 					if (IsReadingFile)
 						return false;
 					return TotalRecordCount > StartRowIndex + PageSize;
@@ -161,7 +152,7 @@ namespace LogViewer
 
 			// check if we're close to last page
 			if (StartRowIndex + PageSize >= TotalRecordCount)
-				return GetPage(Last);
+				return GetPage(Page.Last);
 
 			return GetPageAt(StartRowIndex, PageSize);
 		}
@@ -189,7 +180,7 @@ namespace LogViewer
 					? _jObjectsEnumerable.OrderBy(x => x.Property(sortColumn).ToString()).ToList()
 					: _jObjectsEnumerable.OrderByDescending(x => x.Property(sortColumn).ToString()).ToList();
 			
-			return GetPage(First);
+			return GetPage(Page.First);
 		}
 
 		protected virtual IJEnumerable<JObject> GetPageAt(int start, int pageSize)
@@ -254,7 +245,7 @@ namespace LogViewer
 
 			TotalRecordCount = _jObjectsEnumerable.Count();
 
-			return GetPage(First);
+			return GetPage(Page.First);
 		}
 	}
 }

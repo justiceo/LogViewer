@@ -9,8 +9,8 @@ namespace LogViewer
 {
 	public class CacheDataStore : DataStore
 	{
-        private Dictionary<string, IJEnumerable<JObject>> _cache;
-		private string _lastRequestPage;
+        private Dictionary<Page, IJEnumerable<JObject>> _cache;
+		private Page _lastRequestPage;
 		private int _lastRequestedStart;
 		private Task _refreshTask;
 		private int _fileCurrentPosition = 0;
@@ -19,7 +19,7 @@ namespace LogViewer
 
 		public CacheDataStore(string sourceFileName, int startIndex) : base(sourceFileName, startIndex)
 		{
-            _cache = new Dictionary<string, IJEnumerable<JObject>>();
+            _cache = new Dictionary<Page, IJEnumerable<JObject>>();
 		}
 		public override void LoadFile()
 		{
@@ -28,20 +28,20 @@ namespace LogViewer
             while (_streamReader.ReadLine() != null) TotalRecordCount++;
 
 			// load first and last pages into cache
-			_cache[First] = GetPageAt(DefaultStartRowIndex, PageSize);
+			_cache[Page.First] = GetPageAt(DefaultStartRowIndex, PageSize);
 			var lastPageStart = TotalRecordCount - (TotalRecordCount % PageSize == 0 ? PageSize : TotalRecordCount % PageSize);
-			_cache[Last] = GetPageAt(lastPageStart, TotalRecordCount - lastPageStart);
+			_cache[Page.Last] = GetPageAt(lastPageStart, TotalRecordCount - lastPageStart);
 
 			// instantiate the rest
-            _cache[Next] = new JEnumerable<JObject>();
-            _cache[Previous] = new JEnumerable<JObject>();
+			_cache[Page.Next] = new JEnumerable<JObject>();
+			_cache[Page.Previous] = new JEnumerable<JObject>();
 
-		    _lastRequestPage = First;
+			_lastRequestPage = Page.First;
             _refreshTask = new Task(RefreshCache);
             _refreshTask.Start();
 		}
 
-        public override IJEnumerable<JObject> GetPage(string page)
+        public override IJEnumerable<JObject> GetPage(Page page)
 		{
 			if (_refreshTask.Status == TaskStatus.Running || _refreshTask.Status == TaskStatus.WaitingForActivation || _refreshTask.Status == TaskStatus.WaitingToRun)
 				_refreshTask.Wait();
@@ -50,22 +50,22 @@ namespace LogViewer
 
 			switch (page)
 			{
-				case First:
+				case Page.First:
 					PageSize = UserDefinedPageSize;
 					StartRowIndex = DefaultStartRowIndex;
 					break;
-				case Previous:
+				case Page.Previous:
 					PageSize = UserDefinedPageSize;
 					StartRowIndex -= PageSize;
 					break;
-				case Next:
+				case Page.Next:
 					StartRowIndex += PageSize;
 					if (StartRowIndex + PageSize > TotalRecordCount)
 						PageSize = TotalRecordCount - StartRowIndex;
 					else
 						PageSize = UserDefinedPageSize;
 					break;
-				case Last:
+				case Page.Last:
 					StartRowIndex = TotalRecordCount - (TotalRecordCount % PageSize == 0 ? PageSize : TotalRecordCount % PageSize);
 					PageSize = TotalRecordCount - StartRowIndex;
 					break;
@@ -76,9 +76,9 @@ namespace LogViewer
 
 			var requestedPage = _cache[_lastRequestPage];
 			if (_lastRequestedStart < PageSize) // previous
-				requestedPage = _cache[First];
+				requestedPage = _cache[Page.First];
 			if (_lastRequestedStart + PageSize >= TotalRecordCount) // next
-				requestedPage = _cache[Last];
+				requestedPage = _cache[Page.Last];
 
 
 			_refreshTask = new Task(RefreshCache);
@@ -94,19 +94,19 @@ namespace LogViewer
 		{
 			switch (_lastRequestPage)
 			{
-				case First:
-					_cache[Next] = GetPageAt(_lastRequestedStart + PageSize, PageSize);
+				case Page.First:
+					_cache[Page.Next] = GetPageAt(_lastRequestedStart + PageSize, PageSize);
 					break;
-				case Previous:
-					_cache[Next] = _cache[Previous];
-					_cache[Previous] = GetPageAt(_lastRequestedStart - PageSize, PageSize);
+				case Page.Previous:
+					_cache[Page.Next] = _cache[Page.Previous];
+					_cache[Page.Previous] = GetPageAt(_lastRequestedStart - PageSize, PageSize);
 					break;
-				case Next:
-					_cache[Previous] = _cache[Next];
-					_cache[Next] = GetPageAt(_lastRequestedStart + PageSize, PageSize);
+				case Page.Next:
+					_cache[Page.Previous] = _cache[Page.Next];
+					_cache[Page.Next] = GetPageAt(_lastRequestedStart + PageSize, PageSize);
 					break;
-				case Last:
-					_cache[Previous] = GetPageAt(_lastRequestedStart - UserDefinedPageSize, UserDefinedPageSize);
+				case Page.Last:
+					_cache[Page.Previous] = GetPageAt(_lastRequestedStart - UserDefinedPageSize, UserDefinedPageSize);
 					break;
 			}
 		}
@@ -127,7 +127,7 @@ namespace LogViewer
 
 			// check if we're close to last page
 			if (StartRowIndex + PageSize >= TotalRecordCount)
-				return GetPage(Last);
+				return GetPage(Page.Last);
 
 			return GetPageAt(StartRowIndex, PageSize);
 		}
@@ -147,10 +147,10 @@ namespace LogViewer
                 _streamReader = new StreamReader(SourceFileName);
             }
             // if we're requesting the first or last page, return them from cache
-			if (startIndex < pageSize && _cache.ContainsKey(First))
-				return _cache[First];
-			if (startIndex + pageSize >= TotalRecordCount && _cache.ContainsKey(Last))
-				return _cache[Last];
+			if (startIndex < pageSize && _cache.ContainsKey(Page.First))
+				return _cache[Page.First];
+			if (startIndex + pageSize >= TotalRecordCount && _cache.ContainsKey(Page.Last))
+				return _cache[Page.Last];
 
 			// set start position for read
 			if (_fileCurrentPosition > startIndex)

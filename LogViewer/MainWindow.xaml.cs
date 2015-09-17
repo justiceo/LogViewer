@@ -21,14 +21,14 @@ namespace LogViewer
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		private FilterWindow filterWindow;
-		private MainViewModel mainViewModel;
+		private FilterWindow _filterWindow;
+		private MainViewModel _mainViewModel;
 
 		public MainWindow()
 		{
 			InitializeComponent();
-			mainViewModel = new MainViewModel();
-			DataContext = mainViewModel;
+			_mainViewModel = new MainViewModel();
+			DataContext = _mainViewModel;
 		}
 
 		/// <summary>
@@ -39,18 +39,18 @@ namespace LogViewer
 		private void LogDataGrid_OnSorting(object sender, DataGridSortingEventArgs e)
 		{
 			e.Handled = true;
-			mainViewModel.Sort(e.Column.SortMemberPath);
+			_mainViewModel.Sort(e.Column.SortMemberPath);
 		}
 
 		/// <summary>
-		/// Force sortable on all columns regardless of whether they're nullable.
-		/// Since the sorting operation is abstracted to the Data Access layer which takes care of edge cases.
+		/// Force sortable on all columns when the file is not streamed 
+		/// The sorting operation is abstracted to the Data Access layer which takes care of edge cases.
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
 		private void LogDataGrid_OnAutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
 		{
-            e.Column.CanUserSort = !mainViewModel.IsLargeFile();
+            e.Column.CanUserSort = !_mainViewModel.IsLargeFile();
 		}
 		
 		/// <summary>
@@ -63,11 +63,22 @@ namespace LogViewer
 			Application.Current.Shutdown();
 		}
 
+		/// <summary>
+		/// Give each row an index number matching location in entire file for easy identification
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 	    private void LogDataGrid_OnLoadingRow(object sender, DataGridRowEventArgs e)
 	    {
-            e.Row.Header = (mainViewModel.StartRowIndex() + e.Row.GetIndex() + 1).ToString();
+            e.Row.Header = (_mainViewModel.StartRowIndex() + e.Row.GetIndex() + 1).ToString();
 	    }
 
+		/// <summary>
+		/// Initialize the pagination controls after data grid is loaded
+		/// Helps determine enable/disable state of controls
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 	    private void LogDataGrid_OnLoaded(object sender, RoutedEventArgs e)
 	    {
 	        // init page sizing
@@ -80,6 +91,11 @@ namespace LogViewer
 
 	    }
 
+		/// <summary>
+		/// Launch the filter window and return result to viewmodel for sorting
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 	    private void FilterMenuItem_OnClick(object sender, RoutedEventArgs e)
 	    {
 			List<string> columnNames = new List<string>();
@@ -87,10 +103,12 @@ namespace LogViewer
 		    {
 			    columnNames.Add(dataGridColumn.Header.ToString());
 		    }
-	        filterWindow = new FilterWindow(columnNames);
-	        filterWindow.ShowDialog();
-			var filterCriteria = filterWindow.GetFilterObjectsList();
-			mainViewModel.Filter(filterCriteria);
+	        _filterWindow = new FilterWindow(columnNames);
+	        _filterWindow.ShowDialog();
+			var filterCriteria = _filterWindow.GetFilterObjectsList();
+
+			// Todo: The filtering should not be handled by the viewmodel
+			_mainViewModel.Filter(filterCriteria);
 	    }
 	}
 }

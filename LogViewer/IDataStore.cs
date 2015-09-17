@@ -15,9 +15,9 @@ namespace LogViewer
 
 	    string GetPageNavigationString();
 
-	    IJEnumerable<JObject> GetPage(string page);
+	    IJEnumerable<JObject> GetPage(Page page);
 
-	    bool HasPage(string page);
+	    bool HasPage(Page page);
 
 	    IJEnumerable<JObject> ResizePage();
 
